@@ -1,0 +1,50 @@
+schema_version: scenarios.v1
+event_contract: sensor_event
+scenario_types:
+  normal:
+    description: Nominal telemetry within archetype-specific operating ranges.
+    quality_flags: []
+    valid: true
+  late:
+    description: Event time lags ingest time enough to exercise watermark and lateness handling.
+    quality_flags: [late_arrival]
+    valid: true
+  missing_heartbeat:
+    description: Intentional gap in expected periodic telemetry for heartbeat validation.
+    quality_flags: [missing_heartbeat]
+    valid: true
+  flatline:
+    description: Repeated unchanged value across a detection window.
+    quality_flags: [flatline]
+    valid: true
+  spike:
+    description: Sudden high-amplitude excursion above threshold profile.
+    quality_flags: [threshold_spike]
+    valid: true
+  drift:
+    description: Slow monotonic movement away from rolling baseline.
+    quality_flags: [drift]
+    valid: true
+  invalid_event:
+    description: Deliberately malformed record for validation and DLQ tests.
+    quality_flags: [invalid_contract]
+    valid: false
+profiles:
+  smoke:
+    tenants: 1
+    plants_per_tenant: 1
+    assets_per_plant: 2
+    metric_types: [temperature, vibration, pressure, flow_rate, power_draw]
+    scenarios: [normal, late, missing_heartbeat, flatline, spike, drift, invalid_event]
+    start_time: "2026-01-01T00:00:00Z"
+    periods_per_metric: 2
+  demo:
+    tenants: 3
+    plants_per_tenant: 3
+    assets_per_plant: 20
+    metric_types: [temperature, vibration, pressure, flow_rate, power_draw]
+    anomaly_scenarios: [late, missing_heartbeat, flatline, spike, drift]
+    scenarios: [normal, late, missing_heartbeat, flatline, spike, drift, invalid_event]
+    start_time: "2026-01-01T00:00:00Z"
+    periods_per_metric: 3
+

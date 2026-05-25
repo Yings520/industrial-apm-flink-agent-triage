@@ -1,0 +1,19 @@
+schema_version: triage_prompt.v1
+prompt_version: phase1-placeholder
+system_intent: Summarize anomaly evidence for an industrial operator using only provided event and rule context.
+inputs:
+  - anomaly_event
+  - recent_sensor_events
+  - asset_metadata
+outputs:
+  - agent_explanation
+runbook_refs:
+  manufacturing_factory: runbooks/manufacturing_rotating_equipment.md
+  chemical_plant: runbooks/process_safety_sensor_checks.md
+  power_plant: runbooks/power_generation_vibration.md
+  metallurgy_steel: runbooks/high_heat_line_checks.md
+  water_treatment_utilities: runbooks/water_flow_and_pump_checks.md
+  campus_facilities: runbooks/campus_bms_checks.md
+  industrial_asset_management_generic: runbooks/generic_asset_triage.md
+implementation_note: Placeholder only; Phase 1 does not call an LLM.
+

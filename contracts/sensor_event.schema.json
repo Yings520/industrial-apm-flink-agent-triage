@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/sensor_event.schema.json",
+  "title": "sensor_event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "schema_version",
+    "tenant_id",
+    "plant_id",
+    "asset_id",
+    "metric_name",
+    "event_time",
+    "ingest_time",
+    "value",
+    "unit",
+    "source_system",
+    "quality_flags",
+    "scenario"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "sensor_event.v1"
+    },
+    "tenant_id": {
+      "type": "string",
+      "pattern": "^tenant_[a-z0-9_]+$"
+    },
+    "plant_id": {
+      "type": "string",
+      "pattern": "^plant_[a-z0-9_]+$"
+    },
+    "asset_id": {
+      "type": "string",
+      "pattern": "^asset_[a-z0-9_]+$"
+    },
+    "metric_name": {
+      "type": "string",
+      "enum": ["temperature", "vibration", "pressure", "flow_rate", "power_draw"]
+    },
+    "event_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "ingest_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "value": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string",
+      "enum": ["celsius", "mm_s", "bar", "m3_h", "kw"]
+    },
+    "source_system": {
+      "type": "string",
+      "enum": ["opc_ua", "scada", "historian", "bms"]
+    },
+    "quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "scenario": {
+      "type": "string",
+      "enum": ["normal", "late", "missing_heartbeat", "flatline", "spike", "drift"]
+    }
+  }
+}
