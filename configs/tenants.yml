@@ -1,0 +1,12 @@
+schema_version: tenants.v1
+tenants:
+  - tenant_id: tenant_northwind
+    tenant_name: Northwind Industrial
+    region: americas
+  - tenant_id: tenant_apac_ops
+    tenant_name: APAC Operations
+    region: apac
+  - tenant_id: tenant_euro_core
+    tenant_name: Euro Core Utilities
+    region: emea
+

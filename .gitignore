@@ -1,0 +1,12 @@
+.planning/
+
+data/generated/
+data/rejected/
+data/validation-summary*.json
+.pytest_cache/
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+

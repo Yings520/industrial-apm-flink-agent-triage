@@ -1,0 +1,92 @@
+schema_version: asset_portfolio.v1
+plants_per_tenant: 3
+assets_per_plant: 20
+metric_types:
+  - name: temperature
+    unit: celsius
+  - name: vibration
+    unit: mm_s
+  - name: pressure
+    unit: bar
+  - name: flow_rate
+    unit: m3_h
+  - name: power_draw
+    unit: kw
+archetypes:
+  manufacturing_factory:
+    asset_types: [cnc_machine, conveyor, industrial_robot, packaging_line]
+    expected_metrics: [temperature, vibration, power_draw]
+    units: [celsius, mm_s, kw]
+    threshold_profile_id: threshold_manufacturing_rotating
+    plausible_scenarios: [normal, late, flatline, spike, drift]
+  chemical_plant:
+    asset_types: [reactor, pump, compressor, heat_exchanger]
+    expected_metrics: [temperature, pressure, flow_rate, vibration]
+    units: [celsius, bar, m3_h, mm_s]
+    threshold_profile_id: threshold_chemical_process_safety
+    plausible_scenarios: [normal, missing_heartbeat, flatline, spike, drift]
+  power_plant:
+    asset_types: [turbine, generator, boiler_feed_pump, cooling_tower]
+    expected_metrics: [temperature, vibration, pressure, power_draw]
+    units: [celsius, mm_s, bar, kw]
+    threshold_profile_id: threshold_power_critical
+    plausible_scenarios: [normal, late, spike, drift, missing_heartbeat]
+  metallurgy_steel:
+    asset_types: [rolling_mill, furnace, caster, hydraulic_press]
+    expected_metrics: [temperature, vibration, pressure, power_draw]
+    units: [celsius, mm_s, bar, kw]
+    threshold_profile_id: threshold_steel_high_heat
+    plausible_scenarios: [normal, flatline, spike, drift, late]
+  water_treatment_utilities:
+    asset_types: [lift_pump, clarifier, aerator, membrane_unit]
+    expected_metrics: [flow_rate, pressure, vibration, power_draw]
+    units: [m3_h, bar, mm_s, kw]
+    threshold_profile_id: threshold_water_flow_quality
+    plausible_scenarios: [normal, missing_heartbeat, flatline, drift, late]
+  campus_facilities:
+    asset_types: [chiller, air_handler, boiler, elevator_drive]
+    expected_metrics: [temperature, pressure, flow_rate, power_draw]
+    units: [celsius, bar, m3_h, kw]
+    threshold_profile_id: threshold_campus_bms
+    plausible_scenarios: [normal, late, flatline, spike, invalid_event]
+  industrial_asset_management_generic:
+    asset_types: [motor, gearbox, pump, fan]
+    expected_metrics: [temperature, vibration, pressure, flow_rate, power_draw]
+    units: [celsius, mm_s, bar, m3_h, kw]
+    threshold_profile_id: threshold_generic_balanced
+    plausible_scenarios: [normal, late, missing_heartbeat, flatline, spike, drift]
+tenants:
+  - tenant_id: tenant_northwind
+    plants:
+      - plant_id: plant_northwind_mfg_01
+        site_id: site_northwind_chicago
+        archetype: manufacturing_factory
+      - plant_id: plant_northwind_chem_01
+        site_id: site_northwind_baytown
+        archetype: chemical_plant
+      - plant_id: plant_northwind_power_01
+        site_id: site_northwind_phoenix
+        archetype: power_plant
+  - tenant_id: tenant_apac_ops
+    plants:
+      - plant_id: plant_apac_steel_01
+        site_id: site_apac_pohang
+        archetype: metallurgy_steel
+      - plant_id: plant_apac_water_01
+        site_id: site_apac_singapore
+        archetype: water_treatment_utilities
+      - plant_id: plant_apac_campus_01
+        site_id: site_apac_university
+        archetype: campus_facilities
+  - tenant_id: tenant_euro_core
+    plants:
+      - plant_id: plant_euro_generic_01
+        site_id: site_euro_rotterdam
+        archetype: industrial_asset_management_generic
+      - plant_id: plant_euro_mfg_02
+        site_id: site_euro_stuttgart
+        archetype: manufacturing_factory
+      - plant_id: plant_euro_water_02
+        site_id: site_euro_oslo
+        archetype: water_treatment_utilities
+

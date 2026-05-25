@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/operator_feedback.schema.json",
+  "title": "operator_feedback",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "feedback_id",
+    "schema_version",
+    "tenant_id",
+    "anomaly_id",
+    "operator_id",
+    "is_true_positive",
+    "severity_correction",
+    "explanation_usefulness",
+    "resolution_note",
+    "created_at"
+  ],
+  "properties": {
+    "feedback_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "operator_feedback.v1"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "anomaly_id": {
+      "type": "string"
+    },
+    "operator_id": {
+      "type": "string"
+    },
+    "is_true_positive": {
+      "type": "boolean"
+    },
+    "severity_correction": {
+      "type": "string",
+      "enum": ["none", "info", "warning", "critical"]
+    },
+    "explanation_usefulness": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "resolution_note": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    }
+  }
+}
+

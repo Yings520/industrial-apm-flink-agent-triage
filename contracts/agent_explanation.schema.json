@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/agent_explanation.schema.json",
+  "title": "agent_explanation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "explanation_id",
+    "schema_version",
+    "tenant_id",
+    "anomaly_id",
+    "evidence",
+    "possible_causes",
+    "recommended_checks",
+    "runbook_refs",
+    "confidence_label",
+    "model_name",
+    "prompt_version",
+    "token_cost",
+    "latency_ms"
+  ],
+  "properties": {
+    "explanation_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "agent_explanation.v1"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "anomaly_id": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "possible_causes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommended_checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "runbook_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confidence_label": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "model_name": {
+      "type": "string"
+    },
+    "prompt_version": {
+      "type": "string"
+    },
+    "token_cost": {
+      "type": "number",
+      "minimum": 0
+    },
+    "latency_ms": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}
+

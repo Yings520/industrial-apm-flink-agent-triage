@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/anomaly_event.schema.json",
+  "title": "anomaly_event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "anomaly_id",
+    "schema_version",
+    "rule_id",
+    "tenant_id",
+    "plant_id",
+    "asset_id",
+    "metric_name",
+    "window_start",
+    "window_end",
+    "severity",
+    "quality_flags",
+    "detection_confidence"
+  ],
+  "properties": {
+    "anomaly_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "anomaly_event.v1"
+    },
+    "rule_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "plant_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "metric_name": {
+      "type": "string"
+    },
+    "window_start": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "window_end": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["info", "warning", "critical"]
+    },
+    "quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "detection_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  }
+}
+

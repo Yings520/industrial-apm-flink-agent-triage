@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/asset_metadata.schema.json",
+  "title": "asset_metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "site_id",
+    "plant_id",
+    "asset_id",
+    "asset_type",
+    "criticality",
+    "expected_metrics",
+    "threshold_profile_id",
+    "archetype"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "asset_metadata.v1"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "site_id": {
+      "type": "string"
+    },
+    "plant_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "asset_type": {
+      "type": "string"
+    },
+    "criticality": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "expected_metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "threshold_profile_id": {
+      "type": "string"
+    },
+    "archetype": {
+      "type": "string",
+      "enum": [
+        "manufacturing_factory",
+        "chemical_plant",
+        "power_plant",
+        "metallurgy_steel",
+        "water_treatment_utilities",
+        "campus_facilities",
+        "industrial_asset_management_generic"
+      ]
+    }
+  }
+}
+
