@@ -33,3 +33,30 @@ head -n 3 data/generated/validated_raw_sensor_events.jsonl
 head -n 3 data/rejected/rejected_raw_sensor_records.jsonl
 python -m json.tool data/validation-summary.json
 ```
+
+## Phase 2 Streaming Quickstart
+
+Phase 2 proves local Kafka-compatible ingestion and PyFlink event-time anomaly processing for a portfolio/current-project demo. It does not claim production deployment, production SLA, autonomous diagnosis, automatic remediation, real factory operation, or real downtime/MTTR reduction.
+
+Local ports:
+
+- Redpanda Kafka listener: `localhost:19092`
+- Redpanda admin API: `localhost:19644`
+- Flink JobManager UI: `http://localhost:18081`
+
+```bash
+make stream-start
+make stream-health
+make stream-create-topics
+make generate-demo-data PROFILE=smoke
+make stream-publish-raw PROFILE=smoke
+```
+
+Dry-run helpers are available without Docker:
+
+```bash
+python -m src.streaming.topic_admin --create --dry-run
+python -m src.streaming.publish_raw_events --profile smoke --dry-run
+```
+
+Tenant-scoped topics use raw/staging/mart layers, for example `tenant_northwind.raw.sensor_events.v1`, `tenant_northwind.staging.telemetry_enriched.v1`, `tenant_northwind.mart.anomalies.v1`, and `tenant_northwind.raw.dlq.v1`.
