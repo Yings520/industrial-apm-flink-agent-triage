@@ -9,7 +9,7 @@ from typing import cast
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from src.streaming.topic_names import raw_message_key, render_topic
+from src.streaming.topic_names import raw_message_key, render_topic, tenant_ids
 from src.telemetry_generator.config import REPO_ROOT
 from src.telemetry_generator.schema_validation import reject_entry
 
@@ -66,6 +66,7 @@ def plan_routes(records: list[dict[str, object]], output_dir: Path = Path("data"
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     routes: list[PublishRoute] = []
     fallback_path = output_dir / "rejected" / "raw_publish_rejected.jsonl"
+    known_tenants = set(tenant_ids())
 
     for record in records:
         errors = sorted(validator.iter_errors(record), key=lambda error: list(error.absolute_path))
@@ -92,7 +93,7 @@ def plan_routes(records: list[dict[str, object]], output_dir: Path = Path("data"
             schema_version=schema_version,
             schema_name="raw_sensor_event",
         )
-        if isinstance(tenant_id, str) and tenant_id:
+        if isinstance(tenant_id, str) and tenant_id in known_tenants:
             routes.append(
                 PublishRoute(
                     topic=render_topic("raw_dlq", tenant_id),
@@ -162,4 +163,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

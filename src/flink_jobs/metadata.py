@@ -19,9 +19,14 @@ def resolve_tag_metadata(raw_event: RawSensorEvent, mappings: dict[str, TagMetad
 
 
 def enrich_raw_event(raw_event: RawSensorEvent, mappings: dict[str, TagMetadata] | None = None) -> dict[str, object]:
-    metadata = resolve_tag_metadata(raw_event, mappings)
+    available = mappings if mappings is not None else build_tag_metadata()
+    metadata = available.get(raw_event["tag_id"])
     if metadata is None:
         return to_staging_dlq(raw_event, "missing_tag_metadata", "/tag_id", "No valid tag metadata mapping")
+    if metadata["tenant_id"] != raw_event["tenant_id"]:
+        return to_staging_dlq(raw_event, "invalid_asset_tag_mapping", "/tenant_id", "Tag metadata tenant mismatch")
+    if metadata["unit"] != raw_event["unit"]:
+        return to_staging_dlq(raw_event, "invalid_tag_mapping", "/unit", "Tag metadata unit mismatch")
     return {
         "event_id": raw_event["event_id"],
         "schema_version": "enriched_telemetry.v1",
@@ -57,4 +62,3 @@ def to_staging_dlq(
         schema_version="enriched_telemetry.v1",
         schema_name="enriched_telemetry",
     )
-

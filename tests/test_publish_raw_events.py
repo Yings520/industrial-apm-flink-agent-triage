@@ -36,3 +36,15 @@ def test_publish_routes_missing_tenant_to_fallback_artifact() -> None:
     assert routes[0].valid is False
     assert routes[0].topic is None
     assert routes[0].fallback_path == Path("data/rejected/raw_publish_rejected.jsonl")
+
+
+def test_publish_routes_unknown_tenant_to_fallback_artifact() -> None:
+    record = dict(generate_events(profile_name="smoke", seed=42).invalid_events[0])
+    record["tenant_id"] = "tenant_not_configured"
+
+    routes = plan_routes([record], output_dir=Path("data"))
+
+    assert len(routes) == 1
+    assert routes[0].valid is False
+    assert routes[0].topic is None
+    assert routes[0].fallback_path == Path("data/rejected/raw_publish_rejected.jsonl")

@@ -1,4 +1,4 @@
-.PHONY: setup generate-demo-data validate-schemas stream-start stream-health stream-stop stream-logs stream-create-topics stream-publish-raw test
+.PHONY: setup generate-demo-data validate-schemas stream-start stream-health stream-stop stream-logs stream-create-topics stream-publish-raw flink-run-enrichment flink-run-anomalies stream-verify-replay stream-read-staging test
 
 PYTHON ?= ./.venv/bin/python
 OUTPUT_DIR ?= data

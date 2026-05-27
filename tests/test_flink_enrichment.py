@@ -34,5 +34,14 @@ def test_tenant_tag_mismatch_routes_to_staging_dlq() -> None:
     result = enrich_raw_event(raw_event)  # type: ignore[arg-type]
 
     assert result["schema_name"] == "enriched_telemetry"
-    assert result["error_code"] == "missing_tag_metadata"
+    assert result["error_code"] == "invalid_asset_tag_mapping"
 
+
+def test_unit_mismatch_routes_to_staging_dlq() -> None:
+    raw_event = dict(generate_events(profile_name="smoke", seed=42).valid_events[0])
+    raw_event["unit"] = "kw"
+
+    result = enrich_raw_event(raw_event)  # type: ignore[arg-type]
+
+    assert result["schema_name"] == "enriched_telemetry"
+    assert result["error_code"] == "invalid_tag_mapping"
