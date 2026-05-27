@@ -39,6 +39,12 @@ stream-publish-raw:
 flink-run-enrichment:
 	$(PYTHON) -m src.flink_jobs.enrichment_job --tenant tenant_northwind --broker localhost:19092 --dry-run
 
+flink-run-anomalies:
+	$(PYTHON) -m src.flink_jobs.anomaly_job --tenant tenant_northwind --broker localhost:19092 --dry-run
+
+stream-verify-replay:
+	$(PYTHON) -m src.flink_jobs.replay_verification --actual tests/golden/phase02_anomalies.jsonl --expected tests/golden/phase02_anomalies.jsonl
+
 stream-read-staging:
 	docker compose exec -T redpanda rpk topic consume tenant_northwind.staging.telemetry_enriched.v1 --brokers localhost:19092 --num 5
 

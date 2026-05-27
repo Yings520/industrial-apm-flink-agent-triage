@@ -118,6 +118,8 @@ DLQ records preserve `original_record`, `error_code`, `field_path`, `message`, `
 
 The local event-time defaults are `watermark_delay_minutes: 5` and `allowed_lateness_minutes: 10`. They are demo defaults for deterministic replay and inspection, not production best practices. Production tuning depends on sampling frequency, network delay, edge buffering, and alert latency goals.
 
+Flink runtime output order is not a contract. Replay verification sorts anomaly records by deterministic keys: `anomaly_id`, `rule_id`, `tenant_id`, `asset_id`, `tag_id`, `metric_name`, `window_start`, and `window_end`.
+
 ## agent_explanation
 
 Machine contract: `agent_explanation.schema.json`

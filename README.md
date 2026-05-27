@@ -51,6 +51,8 @@ make stream-create-topics
 make generate-demo-data PROFILE=smoke
 make stream-publish-raw PROFILE=smoke
 make flink-run-enrichment
+make flink-run-anomalies
+make stream-verify-replay
 ```
 
 Dry-run helpers are available without Docker:
@@ -65,3 +67,5 @@ Tenant-scoped topics use raw/staging/mart layers, for example `tenant_northwind.
 The local demo defaults are `watermark_delay_minutes: 5` and `allowed_lateness_minutes: 10` in `configs/streaming.yml`. These are reviewer-friendly industrial APM defaults for the synthetic demo, not production tuning advice. Staging telemetry is written to `*.staging.telemetry_enriched.v1`, mapping failures go to `*.staging.dlq.v1`, late events go to `*.mart.late_events.v1`, and stream health records expose watermark lag and checkpoint status on `*.mart.stream_health.v1`.
 
 PyFlink package compatibility may lag the repo's Python `>=3.13,<3.16` range. The executable job modules expose `--help` and dry-run pipeline descriptions in the local venv; run the actual Flink job through the Docker Flink runtime when PyFlink is unavailable locally.
+
+Flink runtime output order is not a contract. Replay verification reads anomaly JSONL, sorts by deterministic keys including `anomaly_id`, `rule_id`, `tenant_id`, `asset_id`, `tag_id`, `metric_name`, `window_start`, and `window_end`, then compares normalized records.
