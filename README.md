@@ -42,6 +42,7 @@ Local ports:
 
 - Redpanda Kafka listener: `localhost:19092`
 - Redpanda admin API: `localhost:19644`
+- Redpanda Console UI: `http://localhost:18080`
 - Flink JobManager UI: `http://localhost:18081`
 
 ```bash

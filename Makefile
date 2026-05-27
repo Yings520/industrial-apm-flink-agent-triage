@@ -19,7 +19,7 @@ validate-schemas:
 
 stream-start:
 	mkdir -p flink/lib
-	docker compose up -d redpanda flink-jobmanager flink-taskmanager
+	docker compose up -d redpanda redpanda-console flink-jobmanager flink-taskmanager
 
 stream-health:
 	docker compose ps
@@ -29,7 +29,7 @@ stream-stop:
 	docker compose down
 
 stream-logs:
-	docker compose logs --tail=100 redpanda flink-jobmanager flink-taskmanager
+	docker compose logs --tail=100 redpanda redpanda-console flink-jobmanager flink-taskmanager
 
 stream-create-topics:
 	$(PYTHON) -m src.streaming.topic_admin --create --broker localhost:19092

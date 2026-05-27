@@ -26,6 +26,16 @@ services:
       timeout: 5s
       retries: 12
 
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v2.8.5
+    depends_on:
+      redpanda:
+        condition: service_started
+    ports:
+      - "18080:8080"
+    environment:
+      - KAFKA_BROKERS=redpanda:19092
+
   flink-jobmanager:
     image: flink:1.19-scala_2.12-java17
     command: jobmanager
