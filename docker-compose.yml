@@ -21,7 +21,7 @@ services:
       - "19644:9644"
       - "18082:18082"
     healthcheck:
-      test: ["CMD-SHELL", "rpk cluster health --brokers localhost:19092 | grep -q Healthy"]
+      test: ["CMD-SHELL", "rpk -X brokers=localhost:19092 cluster health | grep -q Healthy"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -33,6 +33,9 @@ services:
       - "18081:8081"
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+    volumes:
+      - ./flink/lib:/opt/flink/usrlib:ro
+      - ./sql:/opt/flink/sql:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8081/overview >/dev/null"]
       interval: 10s
@@ -48,3 +51,6 @@ services:
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
       - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=2
+    volumes:
+      - ./flink/lib:/opt/flink/usrlib:ro
+      - ./sql:/opt/flink/sql:ro

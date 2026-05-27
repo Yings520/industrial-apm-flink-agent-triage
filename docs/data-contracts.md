@@ -14,7 +14,7 @@ All timestamps are timezone-aware UTC ISO-8601 strings ending in `Z`. `event_tim
 
 Phase 2 models Kafka topics with raw/staging/mart layers. Raw topics contain original tag-level sensor readings. Staging topics contain Flink-enriched telemetry after tag-to-asset and tag-to-metric mapping. Mart topics contain downstream products such as anomaly events, late events, stream health, and quality summaries.
 
-Default tenant-scoped topic templates live in `configs/streaming.yml`: `{tenant_id}.raw.sensor_events.v1`, `{tenant_id}.raw.dlq.v1`, `{tenant_id}.staging.telemetry_enriched.v1`, `{tenant_id}.staging.dlq.v1`, `{tenant_id}.mart.anomalies.v1`, `{tenant_id}.mart.late_events.v1`, and `{tenant_id}.mart.stream_health.v1`.
+Default tenant-scoped topic templates live in `configs/streaming.yml`: `{tenant_id}.raw_sensor_events.v1`, `{tenant_id}.raw_dlq.v1`, `{tenant_id}.staging_telemetry_enriched.v1`, `{tenant_id}.staging_dlq.v1`, `{tenant_id}.mart_anomalies.v1`, `{tenant_id}.mart_late_events.v1`, and `{tenant_id}.mart_stream_health.v1`.
 
 Tenant-scoped topics are an MVP default for clarity and tenant isolation. A larger production system may prefer shared topics with tenant-aware partitioning or dedicated topics only for high-isolation tenants.
 

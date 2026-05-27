@@ -36,7 +36,7 @@ python -m json.tool data/validation-summary.json
 
 ## Phase 2 Streaming Quickstart
 
-Phase 2 proves local Kafka-compatible ingestion and PyFlink event-time anomaly processing for a portfolio/current-project demo. It does not claim production deployment, production SLA, autonomous diagnosis, automatic remediation, real factory operation, or real downtime/MTTR reduction.
+Phase 2 proves local Kafka-compatible ingestion and Docker-backed Flink SQL processing for a portfolio/current-project demo. It does not claim production deployment, production SLA, autonomous diagnosis, automatic remediation, real factory operation, or real downtime/MTTR reduction.
 
 Local ports:
 
@@ -62,10 +62,10 @@ python -m src.streaming.topic_admin --create --dry-run
 python -m src.streaming.publish_raw_events --profile smoke --dry-run
 ```
 
-Tenant-scoped topics use raw/staging/mart layers, for example `tenant_northwind.raw.sensor_events.v1`, `tenant_northwind.staging.telemetry_enriched.v1`, `tenant_northwind.mart.anomalies.v1`, and `tenant_northwind.raw.dlq.v1`.
+Tenant-scoped topics use `{tenant_id}.{data_layer}_{table_name}.v1`, for example `tenant_northwind.raw_sensor_events.v1`, `tenant_northwind.staging_telemetry_enriched.v1`, `tenant_northwind.mart_anomalies.v1`, and `tenant_northwind.raw_dlq.v1`.
 
-The local demo defaults are `watermark_delay_minutes: 5` and `allowed_lateness_minutes: 10` in `configs/streaming.yml`. These are reviewer-friendly industrial APM defaults for the synthetic demo, not production tuning advice. Staging telemetry is written to `*.staging.telemetry_enriched.v1`, mapping failures go to `*.staging.dlq.v1`, late events go to `*.mart.late_events.v1`, and stream health records expose watermark lag and checkpoint status on `*.mart.stream_health.v1`.
+The local demo defaults are `watermark_delay_minutes: 5` and `allowed_lateness_minutes: 10` in `configs/streaming.yml`. These are reviewer-friendly industrial APM defaults for the synthetic demo, not production tuning advice. Staging telemetry is written to `*.staging_telemetry_enriched.v1`, mapping failures go to `*.staging_dlq.v1`, late events go to `*.mart_late_events.v1`, and stream health records expose watermark lag and checkpoint status on `*.mart_stream_health.v1`.
 
-PyFlink package compatibility may lag the repo's Python `>=3.13,<3.16` range. The executable job modules expose `--help` and dry-run pipeline descriptions in the local venv; run the actual Flink job through the Docker Flink runtime when PyFlink is unavailable locally.
+PyFlink package compatibility may lag the repo's Python `>=3.13,<3.16` range. The executable Python job modules still expose `--help` and local pipeline descriptions, while the reviewer-facing `make flink-run-*` targets submit Flink SQL through the Docker Flink runtime and the Kafka SQL connector.
 
 Flink runtime output order is not a contract. Replay verification reads anomaly JSONL, sorts by deterministic keys including `anomaly_id`, `rule_id`, `tenant_id`, `asset_id`, `tag_id`, `metric_name`, `window_start`, and `window_end`, then compares normalized records.

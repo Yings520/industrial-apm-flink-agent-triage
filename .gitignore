@@ -3,10 +3,10 @@
 data/generated/
 data/rejected/
 data/validation-summary*.json
+flink/lib/
 .pytest_cache/
 __pycache__/
 *.py[cod]
 build/
 dist/
 *.egg-info/
-

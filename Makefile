@@ -4,6 +4,7 @@ PYTHON ?= ./.venv/bin/python
 OUTPUT_DIR ?= data
 SEED ?= 42
 PROFILE ?= demo
+FLINK_SQL ?= ./scripts/flink-sql-client.sh
 
 setup:
 	python3 -m venv .venv
@@ -17,6 +18,7 @@ validate-schemas:
 	$(PYTHON) -m src.telemetry_generator.schema_validation --input $(OUTPUT_DIR)/generated --output-dir $(OUTPUT_DIR) --profile $(PROFILE) --schema raw_sensor_event
 
 stream-start:
+	mkdir -p flink/lib
 	docker compose up -d redpanda flink-jobmanager flink-taskmanager
 
 stream-health:
@@ -37,16 +39,16 @@ stream-publish-raw:
 	$(PYTHON) -m src.streaming.publish_raw_events --profile $(PROFILE) --broker localhost:19092 --output-dir $(OUTPUT_DIR)
 
 flink-run-enrichment:
-	$(PYTHON) -m src.flink_jobs.enrichment_job --tenant tenant_northwind --broker localhost:19092 --dry-run
+	$(FLINK_SQL) sql/flink_enrichment.sql
 
 flink-run-anomalies:
-	$(PYTHON) -m src.flink_jobs.anomaly_job --tenant tenant_northwind --broker localhost:19092 --dry-run
+	$(FLINK_SQL) sql/flink_anomalies.sql
 
 stream-verify-replay:
 	$(PYTHON) -m src.flink_jobs.replay_verification --actual tests/golden/phase02_anomalies.jsonl --expected tests/golden/phase02_anomalies.jsonl
 
 stream-read-staging:
-	docker compose exec -T redpanda rpk -X brokers=localhost:19092 topic consume tenant_northwind.staging.telemetry_enriched.v1 --num 5
+	docker compose exec -T redpanda rpk -X brokers=localhost:19092 topic consume tenant_northwind.staging_telemetry_enriched.v1 --num 5
 
 test:
 	$(PYTHON) -m pytest
