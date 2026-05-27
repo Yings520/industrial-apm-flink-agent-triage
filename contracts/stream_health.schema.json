@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/stream_health.schema.json",
+  "title": "stream_health",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_name",
+    "tenant_id",
+    "watermark_lag_seconds",
+    "late_event_count",
+    "checkpoint_status",
+    "observed_at"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "stream_health.v1"},
+    "job_name": {"type": "string"},
+    "tenant_id": {"type": "string"},
+    "watermark_lag_seconds": {"type": "number", "minimum": 0},
+    "late_event_count": {"type": "integer", "minimum": 0},
+    "checkpoint_status": {"type": "string"},
+    "observed_at": {"type": "string", "format": "date-time", "pattern": "Z$"}
+  }
+}

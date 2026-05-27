@@ -9,13 +9,13 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from src.telemetry_generator.config import load_asset_config, load_scenario_config
+from src.telemetry_generator.config import build_asset_id, build_tag_id, build_tag_metadata, load_asset_config, load_scenario_config
 from src.telemetry_generator.models import (
     ArchetypeConfig,
     AssetConfig,
     GenerationResult,
     OutputPaths,
-    SensorEvent,
+    RawSensorEvent,
     TenantConfig,
 )
 from src.telemetry_generator.scenarios import load_scenarios, resolve_profile
@@ -136,10 +136,11 @@ def generate_events(profile_name: str, seed: int) -> GenerationResult:
     scenario_inventory = load_scenarios()
     profile = resolve_profile(profile_name, scenario_config, asset_config)
     metric_units = _metric_units(asset_config)
+    tag_metadata_by_id = build_tag_metadata(asset_config)
     rng = random.Random(seed)
     start = _parse_utc(profile.start_time)
 
-    events: list[SensorEvent] = []
+    events: list[RawSensorEvent] = []
     invalid_events: list[dict[str, object]] = []
     ordinal = 0
 
@@ -156,10 +157,12 @@ def generate_events(profile_name: str, seed: int) -> GenerationResult:
                 valid_scenarios.insert(0, "normal")
 
             for asset_index in range(1, profile.assets_per_plant + 1):
-                asset_id = f"asset_{plant_id.removeprefix('plant_')}_{asset_index:04d}"
+                asset_id = build_asset_id(plant_id, asset_index)
                 asset_type = _asset_type(archetype_config, asset_index - 1)
                 threshold_profile_id = str(archetype_config["threshold_profile_id"])
                 for metric_index, metric_name in enumerate(metric_names):
+                    tag_id = build_tag_id(plant_id, asset_index, metric_name)
+                    tag_metadata = tag_metadata_by_id[tag_id]
                     scenario_name = valid_scenarios[(asset_index + metric_index + seed) % len(valid_scenarios)]
                     for period in range(profile.periods_per_metric):
                         base = BASE_VALUES[metric_name] + (asset_index % 7) + metric_index
@@ -171,21 +174,19 @@ def generate_events(profile_name: str, seed: int) -> GenerationResult:
                                 profile.name,
                                 str(seed),
                                 tenant_id,
-                                plant_id,
-                                asset_id,
+                                tag_id,
                                 metric_name,
                                 scenario_name,
                                 str(period),
                             ]
                         )
                         events.append(
-                            SensorEvent(
+                            RawSensorEvent(
                                 event_id=event_id,
-                                schema_version="sensor_event.v1",
+                                schema_version="raw_sensor_event.v1",
                                 tenant_id=tenant_id,
-                                plant_id=plant_id,
-                                asset_id=asset_id,
-                                metric_name=metric_name,
+                                tag_id=tag_id,
+                                tag_name=tag_metadata["tag_name"],
                                 event_time=event_time,
                                 ingest_time=ingest_time,
                                 value=value,
@@ -203,11 +204,10 @@ def generate_events(profile_name: str, seed: int) -> GenerationResult:
                             "event_id": _stable_event_id(
                                 [profile.name, str(seed), tenant_id, plant_id, asset_id, "invalid"]
                             ),
-                            "schema_version": "sensor_event.v0",
+                            "schema_version": "raw_sensor_event.v0",
                             "tenant_id": tenant_id,
-                            "plant_id": plant_id,
-                            "asset_id": asset_id,
-                            "metric_name": "temperature",
+                            "tag_id": build_tag_id(plant_id, asset_index, "temperature"),
+                            "tag_name": f"{asset_type}_temperature_{asset_index:04d}",
                             "event_time": _format_utc(start),
                             "ingest_time": _format_utc(start),
                             "unit": "celsius",
@@ -232,8 +232,8 @@ def _write_jsonl(path: Path, records: Iterable[Mapping[str, object]]) -> None:
 def write_profile_output(result: GenerationResult, output_dir: Path) -> OutputPaths:
     generated_dir = output_dir / "generated"
     generated_dir.mkdir(parents=True, exist_ok=True)
-    valid_events_path = generated_dir / f"sensor_events_{result.profile.name}.jsonl"
-    invalid_events_path = generated_dir / f"invalid_events_{result.profile.name}.jsonl"
+    valid_events_path = generated_dir / f"raw_sensor_events_{result.profile.name}.jsonl"
+    invalid_events_path = generated_dir / f"invalid_raw_sensor_events_{result.profile.name}.jsonl"
     _write_jsonl(valid_events_path, list(result.valid_events))
     _write_jsonl(invalid_events_path, result.invalid_events)
     return OutputPaths(valid_events_path=valid_events_path, invalid_events_path=invalid_events_path)

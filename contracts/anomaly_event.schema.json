@@ -11,12 +11,21 @@
     "tenant_id",
     "plant_id",
     "asset_id",
+    "asset_name",
+    "tag_id",
+    "tag_name",
     "metric_name",
+    "observed_value",
+    "baseline_value",
+    "expected_value",
+    "event_count",
+    "breach_count",
     "window_start",
     "window_end",
     "severity",
     "quality_flags",
-    "detection_confidence"
+    "detection_confidence",
+    "source_event_ids"
   ],
   "properties": {
     "anomaly_id": {
@@ -38,8 +47,34 @@
     "asset_id": {
       "type": "string"
     },
+    "asset_name": {
+      "type": "string"
+    },
+    "tag_id": {
+      "type": "string"
+    },
+    "tag_name": {
+      "type": "string"
+    },
     "metric_name": {
       "type": "string"
+    },
+    "observed_value": {
+      "type": "number"
+    },
+    "baseline_value": {
+      "type": ["number", "null"]
+    },
+    "expected_value": {
+      "type": ["number", "null"]
+    },
+    "event_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "breach_count": {
+      "type": "integer",
+      "minimum": 0
     },
     "window_start": {
       "type": "string",
@@ -66,7 +101,14 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1
+    },
+    "source_event_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 10,
+      "uniqueItems": true
     }
   }
 }
-

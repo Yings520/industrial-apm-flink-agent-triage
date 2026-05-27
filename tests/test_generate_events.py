@@ -12,9 +12,8 @@ REQUIRED_EVENT_FIELDS = {
     "event_id",
     "schema_version",
     "tenant_id",
-    "plant_id",
-    "asset_id",
-    "metric_name",
+    "tag_id",
+    "tag_name",
     "event_time",
     "ingest_time",
     "value",
@@ -30,6 +29,7 @@ def test_generate_smoke_events_include_required_fields() -> None:
 
     assert result.valid_events
     assert REQUIRED_EVENT_FIELDS.issubset(result.valid_events[0])
+    assert "asset_id" not in result.valid_events[0]
     assert result.invalid_events
 
 
@@ -75,13 +75,14 @@ def test_demo_generation_covers_full_scale_and_scenarios() -> None:
 def test_generation_uses_archetype_expected_metrics() -> None:
     result = generate_events(profile_name="demo", seed=42)
 
-    manufacturing_metrics = {
-        event["metric_name"]
+    manufacturing_tags = {
+        event["tag_id"]
         for event in result.valid_events
-        if event["plant_id"] == "plant_northwind_mfg_01"
+        if str(event["tag_id"]).startswith("tag_northwind_mfg_01_")
     }
 
-    assert manufacturing_metrics == {"temperature", "vibration", "power_draw"}
+    assert manufacturing_tags
+    assert all(tag.endswith(("temperature", "vibration", "power_draw")) for tag in manufacturing_tags)
 
 
 def test_missing_heartbeat_scenario_creates_event_time_gap() -> None:
@@ -89,7 +90,7 @@ def test_missing_heartbeat_scenario_creates_event_time_gap() -> None:
     grouped_times: dict[tuple[object, object], list[str]] = {}
     for event in result.valid_events:
         if event["scenario"] == "missing_heartbeat":
-            key = (event["asset_id"], event["metric_name"])
+            key = (event["tenant_id"], event["tag_id"])
             grouped_times.setdefault(key, []).append(event["event_time"])
 
     assert grouped_times
@@ -107,3 +108,13 @@ def test_missing_heartbeat_scenario_creates_event_time_gap() -> None:
 def test_parse_utc_rejects_non_z_timestamp() -> None:
     with pytest.raises(ValueError, match="must end with Z"):
         _parse_utc("2026-01-01T00:00:00")
+
+
+def test_generated_raw_tags_have_unique_tenant_mapping() -> None:
+    result = generate_events(profile_name="demo", seed=42)
+    tags_by_tenant: dict[str, set[str]] = {}
+    for event in result.valid_events:
+        tags_by_tenant.setdefault(event["tag_id"], set()).add(event["tenant_id"])
+
+    assert tags_by_tenant
+    assert all(len(tenants) == 1 for tenants in tags_by_tenant.values())

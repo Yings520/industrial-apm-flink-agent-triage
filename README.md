@@ -20,16 +20,16 @@ The demo profile intentionally includes invalid candidate events. `make validate
 
 Generated artifacts:
 
-- `data/generated/sensor_events_*.jsonl` - generated synthetic telemetry candidates.
-- `data/generated/validated_sensor_events.jsonl` - accepted validated events for Phase 2 replay into Kafka.
-- `data/rejected/*.jsonl` - DLQ-shaped rejected records from validation.
+- `data/generated/raw_sensor_events_*.jsonl` - generated tag-centric telemetry candidates.
+- `data/generated/validated_raw_sensor_events.jsonl` - accepted validated events for Phase 2 replay into Kafka.
+- `data/rejected/rejected_raw_sensor_records.jsonl` - DLQ-shaped rejected records from validation.
 - `data/validation-summary.json` - machine-readable validation summary.
 
 Useful inspection commands:
 
 ```bash
-head -n 3 data/generated/sensor_events_demo.jsonl
-head -n 3 data/generated/validated_sensor_events.jsonl
-head -n 3 data/rejected/rejected_records.jsonl
+head -n 3 data/generated/raw_sensor_events_demo.jsonl
+head -n 3 data/generated/validated_raw_sensor_events.jsonl
+head -n 3 data/rejected/rejected_raw_sensor_records.jsonl
 python -m json.tool data/validation-summary.json
 ```

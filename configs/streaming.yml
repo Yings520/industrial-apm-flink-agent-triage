@@ -1,0 +1,16 @@
+schema_version: streaming.v1
+broker:
+  bootstrap_servers: localhost:19092
+  redpanda_admin: http://localhost:19644
+flink:
+  jobmanager_ui: http://localhost:18081
+  watermark_delay_minutes: 5
+  allowed_lateness_minutes: 10
+topics:
+  raw_sensor_events: "{tenant_id}.raw.sensor_events.v1"
+  raw_dlq: "{tenant_id}.raw.dlq.v1"
+  staging_telemetry_enriched: "{tenant_id}.staging.telemetry_enriched.v1"
+  staging_dlq: "{tenant_id}.staging.dlq.v1"
+  mart_anomalies: "{tenant_id}.mart.anomalies.v1"
+  mart_late_events: "{tenant_id}.mart.late_events.v1"
+  mart_stream_health: "{tenant_id}.mart.stream_health.v1"

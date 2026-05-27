@@ -38,6 +38,42 @@ class AssetConfig(TypedDict):
     tenants: list[TenantConfig]
 
 
+class TagMappingConfig(TypedDict):
+    schema_version: str
+    description: str
+    tag_id_pattern: str
+    tag_name_pattern: str
+    required_fields: list[str]
+
+
+class StreamingTopicConfig(TypedDict):
+    raw_sensor_events: str
+    raw_dlq: str
+    staging_telemetry_enriched: str
+    staging_dlq: str
+    mart_anomalies: str
+    mart_late_events: str
+    mart_stream_health: str
+
+
+class StreamingFlinkConfig(TypedDict):
+    jobmanager_ui: str
+    watermark_delay_minutes: int
+    allowed_lateness_minutes: int
+
+
+class StreamingBrokerConfig(TypedDict):
+    bootstrap_servers: str
+    redpanda_admin: str
+
+
+class StreamingConfig(TypedDict):
+    schema_version: str
+    broker: StreamingBrokerConfig
+    flink: StreamingFlinkConfig
+    topics: StreamingTopicConfig
+
+
 class ScenarioTypeConfig(TypedDict):
     description: str
     quality_flags: list[str]
@@ -62,13 +98,12 @@ class ScenarioConfig(TypedDict):
     profiles: dict[str, RawScenarioProfile]
 
 
-class SensorEvent(TypedDict):
+class RawSensorEvent(TypedDict):
     event_id: str
     schema_version: str
     tenant_id: str
-    plant_id: str
-    asset_id: str
-    metric_name: str
+    tag_id: str
+    tag_name: str
     event_time: str
     ingest_time: str
     value: float
@@ -76,6 +111,22 @@ class SensorEvent(TypedDict):
     source_system: str
     quality_flags: list[str]
     scenario: str
+
+
+class SensorEvent(RawSensorEvent):
+    """Backward-compatible alias for Phase 1 imports."""
+
+
+class TagMetadata(TypedDict):
+    tenant_id: str
+    plant_id: str
+    asset_id: str
+    asset_name: str
+    tag_id: str
+    tag_name: str
+    metric_name: str
+    unit: str
+    threshold_profile_id: str
 
 
 @dataclass(frozen=True)
@@ -95,7 +146,7 @@ class ScenarioProfile:
 @dataclass(frozen=True)
 class GenerationResult:
     profile: ScenarioProfile
-    valid_events: list[SensorEvent]
+    valid_events: list[RawSensorEvent]
     invalid_events: list[dict[str, object]]
 
 

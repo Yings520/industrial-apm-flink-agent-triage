@@ -12,11 +12,10 @@ from src.telemetry_generator.schema_validation import validate_input_dir
 def _valid_event() -> dict[str, object]:
     return {
         "event_id": "evt_test_0001",
-        "schema_version": "sensor_event.v1",
+        "schema_version": "raw_sensor_event.v1",
         "tenant_id": "tenant_test",
-        "plant_id": "plant_test_01",
-        "asset_id": "asset_test_0001",
-        "metric_name": "temperature",
+        "tag_id": "tag_test_0001_temperature",
+        "tag_name": "pump_temperature_0001",
         "event_time": "2026-01-01T00:00:00Z",
         "ingest_time": "2026-01-01T00:00:05Z",
         "value": 72.1,
@@ -61,8 +60,8 @@ def test_missing_tenant_id_is_rejected_with_structured_error(tmp_path: Path) -> 
     assert rejected[0]["original_record"] == bad_record
     assert rejected[0]["error_code"] == "missing_required_field"
     assert rejected[0]["field_path"] == "/tenant_id"
-    assert rejected[0]["schema_name"] == "sensor_event"
-    assert rejected[0]["schema_version"] == "sensor_event.v1"
+    assert rejected[0]["schema_name"] == "raw_sensor_event"
+    assert rejected[0]["schema_version"] == "raw_sensor_event.v1"
     validation_time = rejected[0]["validation_time"]
     assert isinstance(validation_time, str)
     assert validation_time.endswith("Z")
@@ -117,7 +116,11 @@ def test_generator_to_validator_smoke_path_writes_artifacts(tmp_path: Path) -> N
     assert summary["total_records"] == len(generation.valid_events) + len(generation.invalid_events)
     assert summary["accepted_records"] == len(generation.valid_events)
     assert summary["rejected_records"] == len(generation.invalid_events)
-    assert summary["schemas_checked"] == ["sensor_event.schema.json"]
+    assert summary["schemas_checked"] == ["raw_sensor_event.schema.json"]
+
+    accepted = _read_jsonl(result.accepted_path)
+    assert "tag_id" in accepted[0]
+    assert "asset_id" not in accepted[0]
 
 
 def test_validation_can_filter_to_current_profile_files(tmp_path: Path) -> None:

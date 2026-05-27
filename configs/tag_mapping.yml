@@ -1,0 +1,5 @@
+schema_version: tag_mapping.v1
+description: Static local MVP metadata mapping. Code derives one tag_id per generated tenant/plant/asset/metric combination from this deterministic template.
+tag_id_pattern: "tag_{plant_slug}_{asset_index:04d}_{metric_name}"
+tag_name_pattern: "{asset_type}_{metric_name}_{asset_index:04d}"
+required_fields: [tenant_id, plant_id, asset_id, asset_name, tag_id, tag_name, metric_name, unit, threshold_profile_id]

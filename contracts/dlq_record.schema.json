@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/dlq_record.schema.json",
+  "title": "dlq_record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "original_record",
+    "error_code",
+    "field_path",
+    "message",
+    "schema_name",
+    "schema_version",
+    "validation_time"
+  ],
+  "properties": {
+    "original_record": {
+      "type": ["object", "null"]
+    },
+    "error_code": {
+      "type": "string",
+      "minLength": 1
+    },
+    "field_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "validation_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "all_errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["error_code", "field_path", "message"],
+        "properties": {
+          "error_code": {
+            "type": "string"
+          },
+          "field_path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

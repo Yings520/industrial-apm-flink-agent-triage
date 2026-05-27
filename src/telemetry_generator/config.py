@@ -13,6 +13,10 @@ from src.telemetry_generator.models import (
     RawScenarioProfile,
     ScenarioConfig,
     ScenarioTypeConfig,
+    StreamingConfig,
+    StreamingTopicConfig,
+    TagMappingConfig,
+    TagMetadata,
     TenantConfig,
 )
 
@@ -133,6 +137,103 @@ def load_asset_config() -> AssetConfig:
         "metric_types": metric_types,
         "archetypes": archetypes,
         "tenants": tenants,
+    }
+
+
+def load_tag_mapping_config() -> TagMappingConfig:
+    raw = load_yaml_config(CONFIG_DIR / "tag_mapping.yml")
+    return {
+        "schema_version": _as_str(raw["schema_version"], "tag_mapping.schema_version"),
+        "description": _as_str(raw["description"], "tag_mapping.description"),
+        "tag_id_pattern": _as_str(raw["tag_id_pattern"], "tag_mapping.tag_id_pattern"),
+        "tag_name_pattern": _as_str(raw["tag_name_pattern"], "tag_mapping.tag_name_pattern"),
+        "required_fields": _as_str_list(raw["required_fields"], "tag_mapping.required_fields"),
+    }
+
+
+def _plant_slug(plant_id: str) -> str:
+    return plant_id.removeprefix("plant_")
+
+
+def build_tag_id(plant_id: str, asset_index: int, metric_name: str) -> str:
+    return f"tag_{_plant_slug(plant_id)}_{asset_index:04d}_{metric_name}"
+
+
+def build_asset_id(plant_id: str, asset_index: int) -> str:
+    return f"asset_{_plant_slug(plant_id)}_{asset_index:04d}"
+
+
+def build_asset_name(asset_type: str, asset_index: int) -> str:
+    return f"{asset_type.replace('_', ' ').title()} {asset_index:04d}"
+
+
+def build_tag_metadata(asset_config: AssetConfig | None = None) -> dict[str, TagMetadata]:
+    config = asset_config if asset_config is not None else load_asset_config()
+    metric_units = {metric["name"]: metric["unit"] for metric in config["metric_types"]}
+    mappings: dict[str, TagMetadata] = {}
+
+    for tenant in config["tenants"]:
+        tenant_id = tenant["tenant_id"]
+        for plant in tenant["plants"]:
+            plant_id = plant["plant_id"]
+            archetype_config = config["archetypes"][plant["archetype"]]
+            asset_types = archetype_config["asset_types"]
+            threshold_profile_id = archetype_config["threshold_profile_id"]
+            for asset_index in range(1, config["assets_per_plant"] + 1):
+                asset_type = asset_types[(asset_index - 1) % len(asset_types)]
+                asset_id = build_asset_id(plant_id, asset_index)
+                asset_name = build_asset_name(asset_type, asset_index)
+                for metric_name in archetype_config["expected_metrics"]:
+                    unit = metric_units[metric_name]
+                    if unit not in archetype_config["units"]:
+                        continue
+                    tag_id = build_tag_id(plant_id, asset_index, metric_name)
+                    if tag_id in mappings and mappings[tag_id]["tenant_id"] != tenant_id:
+                        raise ValueError(f"tag_id maps across tenants: {tag_id}")
+                    mappings[tag_id] = {
+                        "tenant_id": tenant_id,
+                        "plant_id": plant_id,
+                        "asset_id": asset_id,
+                        "asset_name": asset_name,
+                        "tag_id": tag_id,
+                        "tag_name": f"{asset_type}_{metric_name}_{asset_index:04d}",
+                        "metric_name": metric_name,
+                        "unit": unit,
+                        "threshold_profile_id": threshold_profile_id,
+                    }
+    return mappings
+
+
+def load_streaming_config() -> StreamingConfig:
+    raw = load_yaml_config(CONFIG_DIR / "streaming.yml")
+    broker = _as_mapping(raw["broker"], "streaming.broker")
+    flink = _as_mapping(raw["flink"], "streaming.flink")
+    topics_raw = _as_mapping(raw["topics"], "streaming.topics")
+    topics: StreamingTopicConfig = {
+        "raw_sensor_events": _as_str(topics_raw["raw_sensor_events"], "streaming.topics.raw_sensor_events"),
+        "raw_dlq": _as_str(topics_raw["raw_dlq"], "streaming.topics.raw_dlq"),
+        "staging_telemetry_enriched": _as_str(
+            topics_raw["staging_telemetry_enriched"], "streaming.topics.staging_telemetry_enriched"
+        ),
+        "staging_dlq": _as_str(topics_raw["staging_dlq"], "streaming.topics.staging_dlq"),
+        "mart_anomalies": _as_str(topics_raw["mart_anomalies"], "streaming.topics.mart_anomalies"),
+        "mart_late_events": _as_str(topics_raw["mart_late_events"], "streaming.topics.mart_late_events"),
+        "mart_stream_health": _as_str(topics_raw["mart_stream_health"], "streaming.topics.mart_stream_health"),
+    }
+    return {
+        "schema_version": _as_str(raw["schema_version"], "streaming.schema_version"),
+        "broker": {
+            "bootstrap_servers": _as_str(broker["bootstrap_servers"], "streaming.broker.bootstrap_servers"),
+            "redpanda_admin": _as_str(broker["redpanda_admin"], "streaming.broker.redpanda_admin"),
+        },
+        "flink": {
+            "jobmanager_ui": _as_str(flink["jobmanager_ui"], "streaming.flink.jobmanager_ui"),
+            "watermark_delay_minutes": _as_int(flink["watermark_delay_minutes"], "streaming.flink.watermark_delay_minutes"),
+            "allowed_lateness_minutes": _as_int(
+                flink["allowed_lateness_minutes"], "streaming.flink.allowed_lateness_minutes"
+            ),
+        },
+        "topics": topics,
     }
 
 
