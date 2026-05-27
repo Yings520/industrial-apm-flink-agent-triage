@@ -1,9 +1,11 @@
 .planning/
+.DS_Store
 
 data/generated/
 data/rejected/
 data/validation-summary*.json
 flink/lib/
+reports/*.md
 .pytest_cache/
 __pycache__/
 *.py[cod]

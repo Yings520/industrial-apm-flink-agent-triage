@@ -64,3 +64,21 @@ services:
     volumes:
       - ./flink/lib:/opt/flink/usrlib:ro
       - ./sql:/opt/flink/sql:ro
+
+  doris:
+    image: apache/doris:3.0.5-all
+    entrypoint: ["bash", "-lc", "bash entry_point.sh && tail -f /dev/null"]
+    ports:
+      - "18030:8030"
+      - "19030:9030"
+    environment:
+      - FE_SERVERS=fe1:127.0.0.1:9010
+      - FE_ID=1
+      - SKIP_CHECK_ULIMIT=true
+    volumes:
+      - ./sql:/opt/doris/sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysql -uroot -h127.0.0.1 -P9030 -e 'SHOW BACKENDS' 2>/dev/null | grep -q true"]
+      interval: 15s
+      timeout: 10s
+      retries: 20

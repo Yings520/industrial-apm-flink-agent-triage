@@ -120,25 +120,50 @@ The local event-time defaults are `watermark_delay_minutes: 5` and `allowed_late
 
 Flink runtime output order is not a contract. Replay verification sorts anomaly records by deterministic keys: `anomaly_id`, `rule_id`, `tenant_id`, `asset_id`, `tag_id`, `metric_name`, `window_start`, and `window_end`.
 
+## Doris Serving Contracts
+
+Phase 3 loads staging and mart topics into Apache Doris through Routine Load. Redpanda/Kafka topics remain the realtime fact boundary and replay buffer; Doris is the serving/query/dashboard/evidence store.
+
+Doris serving objects:
+
+- `dwd_apm_sensor_readings_rt` - realtime curated sensor readings from `tenant_northwind.staging_apm__sensor_readings.v1`.
+- `fact_apm_anomaly_events` - Flink anomaly events from `tenant_northwind.mart_apm__fct_anomaly_events.v1`.
+- `fact_apm_late_sensor_readings` - late readings from `tenant_northwind.mart_apm__fct_late_sensor_readings.v1`.
+- `fact_apm_stream_health_snapshots` - stream-health records from `tenant_northwind.mart_apm__fct_stream_health_snapshots.v1`.
+- `fact_apm_quality_events` - queryable quality facts derived from flags, late events, and tenant checks.
+- `serving_apm_triage_evidence` - deterministic evidence payloads from Doris facts and runbook references.
+- `fact_apm_agent_recommendations` - LLM or fallback findings and recommended checks after validation.
+
+`fact_apm_quality_events` covers `freshness`, `completeness`, `duplicate`, `range`, `schema_drift`, `late_event`, and `tenant_leakage`. It does not replace Flink `quality_flags`; it makes those signals queryable for dashboards and triage confidence.
+
+`serving_apm_triage_evidence` is not LLM-generated. It contains deterministic evidence such as anomaly fields, bounded source event IDs, quality events, stream health, metric windows, and runbook references. Recommendation text belongs in `fact_apm_agent_recommendations`.
+
 ## agent_explanation
 
 Machine contract: `agent_explanation.schema.json`
 
 | Field | Type | Required | Example | Validation Rule | Downstream Use |
 | --- | --- | --- | --- | --- | --- |
-| explanation_id | string | yes | `expl_000001` | string | Explanation identity |
+| recommendation_id | string | yes | `rec_000001` | string | Recommendation identity |
 | schema_version | string | yes | `agent_explanation.v1` | fixed version | Contract compatibility |
 | tenant_id | string | yes | `tenant_northwind` | string | Tenant isolation |
 | anomaly_id | string | yes | `anom_000001` | string | Alert join |
-| evidence | array | yes | `["vibration exceeded baseline"]` | strings | Operator context |
-| possible_causes | array | yes | `["bearing wear"]` | strings | Hypothesis support |
+| evidence_version | string | yes | `triage_evidence.v1` | string | Join to deterministic evidence |
+| summary | string | yes | `Temperature anomaly detected` | operator-support language | Operator summary |
+| findings | array | yes | `["observed value exceeded expected value"]` | evidence-backed strings | Findings from evidence |
+| possible_causes | array | yes | `["Hypothesis: bearing wear"]` | hypotheses, not truth claims | Hypothesis support |
 | recommended_checks | array | yes | `["Inspect bearing temperature"]` | strings | Next actions |
-| runbook_refs | array | yes | `["runbooks/..."]` | strings | Documentation links |
+| runbook_references | array | yes | `["generic_asset_triage#temperature"]` | supported refs only | Documentation links |
 | confidence_label | string | yes | `medium` | low/medium/high | Human trust calibration |
-| model_name | string | yes | `placeholder` | string | Model lineage |
-| prompt_version | string | yes | `phase1-placeholder` | string | Prompt lineage |
+| quality_caveats | array | yes | `["Sensor window evidence is missing"]` | strings | Confidence caveats |
+| model_name | string | yes | `fallback-rule-based` | string | Model lineage |
+| prompt_version | string | yes | `triage_prompt.v1` | string | Prompt lineage |
 | token_cost | number | yes | `0.0` | non-negative | Cost tracking |
 | latency_ms | integer | yes | `0` | non-negative | Performance tracking |
+| created_at | date-time | yes | `2026-01-01T02:00:00Z` | UTC ISO-8601 | Recommendation timeline |
+| status | string | yes | `fallback` | fallback/llm_generated/quarantined | Provider/fallback status |
+
+Unsupported, malformed, cross-tenant, evidence-free, or overclaiming output is rejected or quarantined before being shaped for `fact_apm_agent_recommendations`.
 
 ## operator_feedback
 

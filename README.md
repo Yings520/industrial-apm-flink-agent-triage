@@ -70,3 +70,42 @@ The local demo defaults are `watermark_delay_minutes: 5` and `allowed_lateness_m
 PyFlink package compatibility may lag the repo's Python `>=3.13,<3.16` range. The executable Python job modules still expose `--help` and local pipeline descriptions, while the reviewer-facing `make flink-run-*` targets submit Flink SQL through the Docker Flink runtime and the Kafka SQL connector.
 
 Flink runtime output order is not a contract. Replay verification reads anomaly JSONL, sorts by deterministic keys including `anomaly_id`, `rule_id`, `tenant_id`, `asset_id`, `tag_id`, `metric_name`, `window_start`, and `window_end`, then compares normalized records.
+
+## Phase 3 Serving Quickstart
+
+Phase 3 adds Apache Doris as the local realtime serving store. Doris consumes Redpanda staging/mart topics through Routine Load and exposes SQL/report surfaces for inspection. Docker Doris is local/demo only; it is not a production HA deployment.
+
+Additional local ports:
+
+- Doris FE HTTP: `http://localhost:18030`
+- Doris MySQL protocol: `localhost:19030`
+
+```bash
+make serving-start
+make serving-health
+make stream-create-topics
+make stream-publish-raw PROFILE=smoke
+make flink-run-enrichment
+make flink-run-anomalies
+make serving-init
+make serving-load-jobs
+make serving-query
+make phase3-report
+```
+
+One-command local path:
+
+```bash
+make phase3-e2e
+```
+
+Inspection surfaces:
+
+- Redpanda Console: `http://localhost:18080` for raw/staging/mart topics.
+- Flink UI: `http://localhost:18081` for local job/runtime status.
+- Doris SQL: `make serving-query` for table counts and sample rows.
+- Report: `reports/phase3-serving-report.md` for local/synthetic dashboard metrics.
+
+Phase 3 is not considered passed unless Doris query output or the generated report shows data from the serving path. Routine Load jobs consume `tenant_northwind.staging_apm__sensor_readings.v1`, `tenant_northwind.mart_apm__fct_anomaly_events.v1`, `tenant_northwind.mart_apm__fct_late_sensor_readings.v1`, and `tenant_northwind.mart_apm__fct_stream_health_snapshots.v1`; raw topics stay in Redpanda for replay/debug.
+
+LLM-assisted triage remains provider-optional. The default fallback path generates evidence-grounded findings and recommended checks without paid LLM credentials. The LLM/fallback writes recommendation output; it does not generate evidence or detect anomalies.

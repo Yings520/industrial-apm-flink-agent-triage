@@ -1,4 +1,4 @@
-.PHONY: setup generate-demo-data validate-schemas stream-start stream-health stream-stop stream-logs stream-create-topics stream-publish-raw flink-run-enrichment flink-run-anomalies stream-verify-replay stream-read-staging test
+.PHONY: setup generate-demo-data validate-schemas stream-start stream-health stream-stop stream-logs stream-create-topics stream-publish-raw flink-run-enrichment flink-run-anomalies stream-verify-replay stream-read-staging serving-start serving-health serving-stop serving-init serving-load-jobs serving-query phase3-report phase3-e2e test
 
 PYTHON ?= ./.venv/bin/python
 OUTPUT_DIR ?= data
@@ -49,6 +49,38 @@ stream-verify-replay:
 
 stream-read-staging:
 	docker compose exec -T redpanda rpk -X brokers=localhost:19092 topic consume tenant_northwind.staging_apm__sensor_readings.v1 --num 5
+
+serving-start:
+	mkdir -p flink/lib reports
+	docker compose up -d redpanda redpanda-console flink-jobmanager flink-taskmanager doris
+
+serving-health:
+	docker compose ps
+	./scripts/doris-sql.sh -e "SHOW FRONTENDS; SHOW BACKENDS;"
+	./scripts/doris-sql.sh -e "SHOW BACKENDS;" | grep -q true
+
+serving-stop:
+	docker compose down
+
+serving-init:
+	./scripts/doris-sql.sh sql/doris_schema.sql
+	./scripts/doris-sql.sh sql/doris_serving_views.sql
+
+serving-load-jobs:
+	-./scripts/doris-sql.sh -e "STOP ROUTINE LOAD FOR industrial_apm.rl_staging_apm_sensor_readings;"
+	-./scripts/doris-sql.sh -e "STOP ROUTINE LOAD FOR industrial_apm.rl_mart_apm_anomaly_events;"
+	-./scripts/doris-sql.sh -e "STOP ROUTINE LOAD FOR industrial_apm.rl_mart_apm_late_sensor_readings;"
+	-./scripts/doris-sql.sh -e "STOP ROUTINE LOAD FOR industrial_apm.rl_mart_apm_stream_health_snapshots;"
+	./scripts/doris-sql.sh sql/doris_routine_load.sql
+
+serving-query:
+	./scripts/doris-sql.sh sql/doris_inspection_queries.sql
+
+phase3-report:
+	$(PYTHON) -m src.dashboards.apm_report --output reports/phase3-serving-report.md
+
+phase3-e2e:
+	./scripts/phase3-e2e.sh
 
 test:
 	$(PYTHON) -m pytest

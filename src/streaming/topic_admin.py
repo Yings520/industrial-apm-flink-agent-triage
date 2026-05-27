@@ -22,8 +22,17 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _run_rpk(args: list[str]) -> None:
-    _ = subprocess.run(args, check=True)
+def _run_rpk(args: list[str], *, allow_topic_exists: bool = False) -> None:
+    result = subprocess.run(args, text=True, capture_output=True)
+    output = f"{result.stdout}\n{result.stderr}"
+    if result.returncode == 0:
+        if result.stdout:
+            print(result.stdout, end="")
+        return
+    if allow_topic_exists and "TOPIC_ALREADY_EXISTS" in output:
+        print(result.stdout, end="")
+        return
+    raise subprocess.CalledProcessError(result.returncode, args, output=result.stdout, stderr=result.stderr)
 
 
 def create_topics(broker: str, dry_run: bool = False) -> list[str]:
@@ -45,7 +54,7 @@ def create_topics(broker: str, dry_run: bool = False) -> list[str]:
         if dry_run:
             print(" ".join(command))
         else:
-            _run_rpk(command)
+            _run_rpk(command, allow_topic_exists=True)
     return topics
 
 
