@@ -26,7 +26,7 @@ class PublishRoute:
 
 
 class PublishNamespace(argparse.Namespace):
-    input: Path = Path()
+    input: Path | None = None
     broker: str = "localhost:19092"
     tenant: str | None = None
     profile: str = "demo"
@@ -115,8 +115,22 @@ def _append_fallback(path: Path, record: dict[str, object]) -> None:
 
 
 def _produce(topic: str, key: str, record: dict[str, object], broker: str) -> None:
-    command = ["docker", "compose", "exec", "-T", "redpanda", "rpk", "topic", "produce", topic, "--brokers", broker]
-    payload = json.dumps({"key": key, "value": record}, sort_keys=True, separators=(",", ":")) + "\n"
+    command = [
+        "docker",
+        "compose",
+        "exec",
+        "-T",
+        "redpanda",
+        "rpk",
+        "-X",
+        f"brokers={broker}",
+        "topic",
+        "produce",
+        topic,
+        "-k",
+        key,
+    ]
+    payload = json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
     _ = subprocess.run(command, input=payload, text=True, check=True)
 
 

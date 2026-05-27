@@ -36,11 +36,11 @@ def create_topics(broker: str, dry_run: bool = False) -> list[str]:
             "-T",
             "redpanda",
             "rpk",
+            "-X",
+            f"brokers={broker}",
             "topic",
             "create",
             topic,
-            "--brokers",
-            broker,
         ]
         if dry_run:
             print(" ".join(command))
@@ -50,7 +50,7 @@ def create_topics(broker: str, dry_run: bool = False) -> list[str]:
 
 
 def list_topics(broker: str, dry_run: bool = False) -> None:
-    command = ["docker", "compose", "exec", "-T", "redpanda", "rpk", "topic", "list", "--brokers", broker]
+    command = ["docker", "compose", "exec", "-T", "redpanda", "rpk", "-X", f"brokers={broker}", "topic", "list"]
     if dry_run:
         print(" ".join(command))
     else:
@@ -72,4 +72,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

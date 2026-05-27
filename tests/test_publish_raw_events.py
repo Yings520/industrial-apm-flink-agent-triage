@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.streaming.publish_raw_events import plan_routes
+from src.streaming.publish_raw_events import PublishNamespace, build_parser, plan_routes
 from src.telemetry_generator.generate_events import generate_events
 
 
@@ -13,6 +13,12 @@ def test_publish_routes_valid_raw_records_to_tenant_topic() -> None:
     assert routes[0].valid is True
     assert routes[0].topic == "tenant_northwind.raw.sensor_events.v1"
     assert routes[0].key == f"{record['tenant_id']}|{record['tag_id']}"
+
+
+def test_publish_parser_uses_generated_profile_input_by_default() -> None:
+    args = build_parser().parse_args(["--profile", "smoke"], namespace=PublishNamespace())
+
+    assert args.input is None
 
 
 def test_publish_routes_invalid_raw_records_to_tenant_dlq() -> None:

@@ -21,7 +21,7 @@ stream-start:
 
 stream-health:
 	docker compose ps
-	docker compose exec -T redpanda rpk cluster health --brokers localhost:19092
+	docker compose exec -T redpanda rpk -X brokers=localhost:19092 cluster health
 
 stream-stop:
 	docker compose down
@@ -46,7 +46,7 @@ stream-verify-replay:
 	$(PYTHON) -m src.flink_jobs.replay_verification --actual tests/golden/phase02_anomalies.jsonl --expected tests/golden/phase02_anomalies.jsonl
 
 stream-read-staging:
-	docker compose exec -T redpanda rpk topic consume tenant_northwind.staging.telemetry_enriched.v1 --brokers localhost:19092 --num 5
+	docker compose exec -T redpanda rpk -X brokers=localhost:19092 topic consume tenant_northwind.staging.telemetry_enriched.v1 --num 5
 
 test:
 	$(PYTHON) -m pytest
