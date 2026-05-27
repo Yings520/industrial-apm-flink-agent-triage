@@ -7,10 +7,10 @@ flink:
   watermark_delay_minutes: 5
   allowed_lateness_minutes: 10
 topics:
-  raw_sensor_events: "{tenant_id}.raw_sensor_events.v1"
-  raw_dlq: "{tenant_id}.raw_dlq.v1"
-  staging_telemetry_enriched: "{tenant_id}.staging_telemetry_enriched.v1"
-  staging_dlq: "{tenant_id}.staging_dlq.v1"
-  mart_anomalies: "{tenant_id}.mart_anomalies.v1"
-  mart_late_events: "{tenant_id}.mart_late_events.v1"
-  mart_stream_health: "{tenant_id}.mart_stream_health.v1"
+  raw_sensor_events: "{tenant_id}.raw_apm__sensor_readings.v1"
+  raw_dlq: "{tenant_id}.raw_apm__dlq_events.v1"
+  staging_telemetry_enriched: "{tenant_id}.staging_apm__sensor_readings.v1"
+  staging_dlq: "{tenant_id}.staging_apm__dlq_events.v1"
+  mart_anomalies: "{tenant_id}.mart_apm__fct_anomaly_events.v1"
+  mart_late_events: "{tenant_id}.mart_apm__fct_late_sensor_readings.v1"
+  mart_stream_health: "{tenant_id}.mart_apm__fct_stream_health_snapshots.v1"

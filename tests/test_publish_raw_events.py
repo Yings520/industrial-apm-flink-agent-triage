@@ -11,7 +11,7 @@ def test_publish_routes_valid_raw_records_to_tenant_topic() -> None:
 
     assert len(routes) == 1
     assert routes[0].valid is True
-    assert routes[0].topic == "tenant_northwind.raw_sensor_events.v1"
+    assert routes[0].topic == "tenant_northwind.raw_apm__sensor_readings.v1"
     assert routes[0].key == f"{record['tenant_id']}|{record['tag_id']}"
 
 
@@ -28,7 +28,7 @@ def test_publish_routes_invalid_raw_records_to_tenant_dlq() -> None:
 
     assert len(routes) == 1
     assert routes[0].valid is False
-    assert routes[0].topic == "tenant_northwind.raw_dlq.v1"
+    assert routes[0].topic == "tenant_northwind.raw_apm__dlq_events.v1"
     assert routes[0].record["schema_name"] == "raw_sensor_event"
 
 

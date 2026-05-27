@@ -48,7 +48,7 @@ stream-verify-replay:
 	$(PYTHON) -m src.flink_jobs.replay_verification --actual tests/golden/phase02_anomalies.jsonl --expected tests/golden/phase02_anomalies.jsonl
 
 stream-read-staging:
-	docker compose exec -T redpanda rpk -X brokers=localhost:19092 topic consume tenant_northwind.staging_telemetry_enriched.v1 --num 5
+	docker compose exec -T redpanda rpk -X brokers=localhost:19092 topic consume tenant_northwind.staging_apm__sensor_readings.v1 --num 5
 
 test:
 	$(PYTHON) -m pytest

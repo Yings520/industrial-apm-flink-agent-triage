@@ -16,7 +16,7 @@ CREATE TABLE raw_sensor_events (
   `value` DOUBLE
 ) WITH (
   'connector' = 'kafka',
-  'topic' = 'tenant_northwind.raw_sensor_events.v1',
+  'topic' = 'tenant_northwind.raw_apm__sensor_readings.v1',
   'properties.bootstrap.servers' = 'redpanda:19092',
   'properties.group.id' = 'phase02-flink-enrichment',
   'scan.startup.mode' = 'earliest-offset',
@@ -45,7 +45,7 @@ CREATE TABLE staging_telemetry_enriched (
   scenario STRING
 ) WITH (
   'connector' = 'kafka',
-  'topic' = 'tenant_northwind.staging_telemetry_enriched.v1',
+  'topic' = 'tenant_northwind.staging_apm__sensor_readings.v1',
   'properties.bootstrap.servers' = 'redpanda:19092',
   'format' = 'json'
 );

@@ -63,9 +63,9 @@ python -m src.streaming.topic_admin --create --dry-run
 python -m src.streaming.publish_raw_events --profile smoke --dry-run
 ```
 
-Tenant-scoped topics use `{tenant_id}.{data_layer}_{table_name}.v1`, for example `tenant_northwind.raw_sensor_events.v1`, `tenant_northwind.staging_telemetry_enriched.v1`, `tenant_northwind.mart_anomalies.v1`, and `tenant_northwind.raw_dlq.v1`.
+Tenant-scoped topics use `{tenant_id}.{layer}_{domain}__{model_name}.v1`, for example `tenant_northwind.raw_apm__sensor_readings.v1`, `tenant_northwind.staging_apm__sensor_readings.v1`, `tenant_northwind.mart_apm__fct_anomaly_events.v1`, and `tenant_northwind.raw_apm__dlq_events.v1`.
 
-The local demo defaults are `watermark_delay_minutes: 5` and `allowed_lateness_minutes: 10` in `configs/streaming.yml`. These are reviewer-friendly industrial APM defaults for the synthetic demo, not production tuning advice. Staging telemetry is written to `*.staging_telemetry_enriched.v1`, mapping failures go to `*.staging_dlq.v1`, late events go to `*.mart_late_events.v1`, and stream health records expose watermark lag and checkpoint status on `*.mart_stream_health.v1`.
+The local demo defaults are `watermark_delay_minutes: 5` and `allowed_lateness_minutes: 10` in `configs/streaming.yml`. These are reviewer-friendly industrial APM defaults for the synthetic demo, not production tuning advice. Staging sensor readings are written to `*.staging_apm__sensor_readings.v1`, mapping failures go to `*.staging_apm__dlq_events.v1`, late readings go to `*.mart_apm__fct_late_sensor_readings.v1`, and stream health records expose watermark lag and checkpoint status on `*.mart_apm__fct_stream_health_snapshots.v1`.
 
 PyFlink package compatibility may lag the repo's Python `>=3.13,<3.16` range. The executable Python job modules still expose `--help` and local pipeline descriptions, while the reviewer-facing `make flink-run-*` targets submit Flink SQL through the Docker Flink runtime and the Kafka SQL connector.
 

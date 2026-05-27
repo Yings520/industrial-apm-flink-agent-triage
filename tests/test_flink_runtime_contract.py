@@ -18,9 +18,9 @@ def test_flink_sql_runtime_scripts_use_bounded_redpanda_topics() -> None:
     enrichment_sql = (REPO_ROOT / "sql/flink_enrichment.sql").read_text(encoding="utf-8")
     anomaly_sql = (REPO_ROOT / "sql/flink_anomalies.sql").read_text(encoding="utf-8")
 
-    assert "tenant_northwind.raw_sensor_events.v1" in enrichment_sql
-    assert "tenant_northwind.staging_telemetry_enriched.v1" in enrichment_sql
+    assert "tenant_northwind.raw_apm__sensor_readings.v1" in enrichment_sql
+    assert "tenant_northwind.staging_apm__sensor_readings.v1" in enrichment_sql
     assert "scan.bounded.mode" in enrichment_sql
-    assert "tenant_northwind.staging_telemetry_enriched.v1" in anomaly_sql
-    assert "tenant_northwind.mart_anomalies.v1" in anomaly_sql
+    assert "tenant_northwind.staging_apm__sensor_readings.v1" in anomaly_sql
+    assert "tenant_northwind.mart_apm__fct_anomaly_events.v1" in anomaly_sql
     assert "scan.bounded.mode" in anomaly_sql

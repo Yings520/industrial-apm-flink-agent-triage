@@ -21,7 +21,7 @@ CREATE TABLE staging_telemetry_enriched (
   scenario STRING
 ) WITH (
   'connector' = 'kafka',
-  'topic' = 'tenant_northwind.staging_telemetry_enriched.v1',
+  'topic' = 'tenant_northwind.staging_apm__sensor_readings.v1',
   'properties.bootstrap.servers' = 'redpanda:19092',
   'properties.group.id' = 'phase02-flink-anomalies',
   'scan.startup.mode' = 'earliest-offset',
@@ -54,7 +54,7 @@ CREATE TABLE mart_anomalies (
   source_event_ids ARRAY<STRING>
 ) WITH (
   'connector' = 'kafka',
-  'topic' = 'tenant_northwind.mart_anomalies.v1',
+  'topic' = 'tenant_northwind.mart_apm__fct_anomaly_events.v1',
   'properties.bootstrap.servers' = 'redpanda:19092',
   'format' = 'json'
 );

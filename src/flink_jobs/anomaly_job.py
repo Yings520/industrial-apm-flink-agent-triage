@@ -25,7 +25,11 @@ def describe_pipeline(tenant_id: str) -> dict[str, str]:
         "anomalies": render_topic("mart_anomalies", tenant_id),
         "late": render_topic("mart_late_events", tenant_id),
         "health": render_topic("mart_stream_health", tenant_id),
-        "topic_templates": "{tenant_id}.mart_anomalies.v1,{tenant_id}.mart_late_events.v1,{tenant_id}.mart_stream_health.v1",
+        "topic_templates": (
+            "{tenant_id}.mart_apm__fct_anomaly_events.v1,"
+            "{tenant_id}.mart_apm__fct_late_sensor_readings.v1,"
+            "{tenant_id}.mart_apm__fct_stream_health_snapshots.v1"
+        ),
         "event_time": "event_time",
         "watermark": "WatermarkStrategy.for_bounded_out_of_orderness",
         "keyBy": "tenant_id,asset_id,tag_id",
