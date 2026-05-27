@@ -116,6 +116,8 @@ Machine contracts: `dlq_record.schema.json`, `late_event.schema.json`, and `stre
 
 DLQ records preserve `original_record`, `error_code`, `field_path`, `message`, `schema_name`, `schema_version`, `validation_time`, and optional `all_errors`. Late events preserve the source event timing, watermark time, lateness minutes, and reason. Stream-health records expose job name, tenant ID, watermark lag, late-event count, checkpoint status/config, and observation time.
 
+The local event-time defaults are `watermark_delay_minutes: 5` and `allowed_lateness_minutes: 10`. They are demo defaults for deterministic replay and inspection, not production best practices. Production tuning depends on sampling frequency, network delay, edge buffering, and alert latency goals.
+
 ## agent_explanation
 
 Machine contract: `agent_explanation.schema.json`

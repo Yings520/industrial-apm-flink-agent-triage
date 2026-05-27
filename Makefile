@@ -36,5 +36,11 @@ stream-publish-raw:
 	$(PYTHON) -m src.telemetry_generator.generate_events --profile $(PROFILE) --seed $(SEED) --output-dir $(OUTPUT_DIR)
 	$(PYTHON) -m src.streaming.publish_raw_events --profile $(PROFILE) --broker localhost:19092 --output-dir $(OUTPUT_DIR)
 
+flink-run-enrichment:
+	$(PYTHON) -m src.flink_jobs.enrichment_job --tenant tenant_northwind --broker localhost:19092 --dry-run
+
+stream-read-staging:
+	docker compose exec -T redpanda rpk topic consume tenant_northwind.staging.telemetry_enriched.v1 --brokers localhost:19092 --num 5
+
 test:
 	$(PYTHON) -m pytest
