@@ -83,12 +83,14 @@ Additional local ports:
 ```bash
 make serving-start
 make serving-health
+make serving-init
+make phase3-reset
 make stream-create-topics
 make stream-publish-raw PROFILE=smoke
 make flink-run-enrichment
 make flink-run-anomalies
-make serving-init
 make serving-load-jobs
+make phase3-load-triage
 make serving-query
 make phase3-report
 ```
@@ -107,5 +109,7 @@ Inspection surfaces:
 - Report: `reports/phase3-serving-report.md` for local/synthetic dashboard metrics.
 
 Phase 3 is not considered passed unless Doris query output or the generated report shows data from the serving path. Routine Load jobs consume `tenant_northwind.staging_apm__sensor_readings.v1`, `tenant_northwind.mart_apm__fct_anomaly_events.v1`, `tenant_northwind.mart_apm__fct_late_sensor_readings.v1`, and `tenant_northwind.mart_apm__fct_stream_health_snapshots.v1`; raw topics stay in Redpanda for replay/debug.
+
+`make phase3-e2e` is reset-first for repeatability: it deletes/recreates the local `tenant_northwind` Redpanda topics, truncates Phase 3 Doris serving tables, reloads Routine Load jobs from the beginning, and fails unless Doris has nonzero sensor, anomaly, late-event, stream-health, quality-event, triage-evidence, and recommendation rows.
 
 LLM-assisted triage remains provider-optional. The default fallback path generates evidence-grounded findings and recommended checks without paid LLM credentials. The LLM/fallback writes recommendation output; it does not generate evidence or detect anomalies.

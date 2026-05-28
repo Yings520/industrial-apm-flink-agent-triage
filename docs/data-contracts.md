@@ -138,6 +138,8 @@ Doris serving objects:
 
 `serving_apm_triage_evidence` is not LLM-generated. It contains deterministic evidence such as anomaly fields, bounded source event IDs, quality events, stream health, metric windows, and runbook references. Recommendation text belongs in `fact_apm_agent_recommendations`.
 
+The local hardening E2E is reset-first: `phase3-reset` truncates the Phase 3 Doris serving tables and deletes/recreates the local `tenant_northwind` Redpanda topics before the smoke run. The E2E gate requires nonzero rows in sensor readings, anomaly events, late sensor readings, stream-health snapshots, quality events, triage evidence, and agent recommendations.
+
 ## agent_explanation
 
 Machine contract: `agent_explanation.schema.json`

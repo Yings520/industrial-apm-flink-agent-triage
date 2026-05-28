@@ -78,7 +78,7 @@ services:
     volumes:
       - ./sql:/opt/doris/sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "mysql -uroot -h127.0.0.1 -P9030 -e 'SHOW BACKENDS' 2>/dev/null | grep -q true"]
+      test: ["CMD-SHELL", "mysql -uroot -h127.0.0.1 -P9030 -N -B -e 'SHOW BACKENDS' 2>/dev/null | awk -F '\\t' '{ if ($10 == \"true\") found = 1 } END { exit !found }'"]
       interval: 15s
       timeout: 10s
       retries: 20

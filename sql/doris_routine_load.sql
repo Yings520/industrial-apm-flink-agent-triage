@@ -78,12 +78,16 @@ COLUMNS(
   event_id,
   schema_version,
   tenant_id,
+  plant_id,
+  asset_id,
   tag_id,
+  metric_name,
   event_time,
   ingest_time,
   watermark_time,
   lateness_minutes,
   reason,
+  quality_flags,
   source_topic = 'tenant_northwind.mart_apm__fct_late_sensor_readings.v1'
 )
 PROPERTIES (

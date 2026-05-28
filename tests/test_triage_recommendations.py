@@ -53,4 +53,5 @@ def test_valid_fallback_can_be_persisted() -> None:
     row = recommendation_row(rec, validation)
     assert row["validation_status"] == "valid"
     assert row["recommendation_id"] == rec["recommendation_id"]
-    assert row["fact_table"] if False else True
+    assert row["tenant_id"] == evidence["tenant_id"]
+    assert row["recommended_checks"]

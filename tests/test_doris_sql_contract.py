@@ -49,3 +49,14 @@ def test_serving_views_and_inspection_queries_exist() -> None:
     assert "tenant_id" in VIEWS_SQL
     assert "COUNT(*) AS row_count FROM dwd_apm_sensor_readings_rt" in INSPECTION_SQL
     assert "COUNT(*) AS row_count FROM fact_apm_anomaly_events" in INSPECTION_SQL
+    assert "COUNT(*) AS row_count FROM serving_apm_triage_evidence" in INSPECTION_SQL
+    assert "COUNT(*) AS row_count FROM fact_apm_agent_recommendations" in INSPECTION_SQL
+
+
+def test_flink_sql_outputs_all_serving_mart_topics() -> None:
+    flink_sql = Path("sql/flink_anomalies.sql").read_text()
+    assert "tenant_northwind.mart_apm__fct_anomaly_events.v1" in flink_sql
+    assert "tenant_northwind.mart_apm__fct_late_sensor_readings.v1" in flink_sql
+    assert "tenant_northwind.mart_apm__fct_stream_health_snapshots.v1" in flink_sql
+    assert "INSERT INTO mart_late_sensor_readings" in flink_sql
+    assert "INSERT INTO mart_stream_health" in flink_sql

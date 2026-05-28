@@ -59,6 +59,42 @@ CREATE TABLE mart_anomalies (
   'format' = 'json'
 );
 
+CREATE TABLE mart_late_sensor_readings (
+  event_id STRING,
+  schema_version STRING,
+  tenant_id STRING,
+  plant_id STRING,
+  asset_id STRING,
+  tag_id STRING,
+  metric_name STRING,
+  event_time STRING,
+  ingest_time STRING,
+  watermark_time STRING,
+  lateness_minutes DOUBLE,
+  reason STRING,
+  quality_flags ARRAY<STRING>
+) WITH (
+  'connector' = 'kafka',
+  'topic' = 'tenant_northwind.mart_apm__fct_late_sensor_readings.v1',
+  'properties.bootstrap.servers' = 'redpanda:19092',
+  'format' = 'json'
+);
+
+CREATE TABLE mart_stream_health (
+  schema_version STRING,
+  job_name STRING,
+  tenant_id STRING,
+  watermark_lag_seconds DOUBLE,
+  late_event_count INT,
+  checkpoint_status STRING,
+  observed_at STRING
+) WITH (
+  'connector' = 'kafka',
+  'topic' = 'tenant_northwind.mart_apm__fct_stream_health_snapshots.v1',
+  'properties.bootstrap.servers' = 'redpanda:19092',
+  'format' = 'json'
+);
+
 INSERT INTO mart_anomalies
 SELECT
   CONCAT('anom_', SUBSTRING(MD5(CONCAT_WS('|', scenario, tenant_id, asset_id, tag_id, metric_name, event_time, event_time)), 1, 20)) AS anomaly_id,
@@ -92,3 +128,33 @@ SELECT
   ARRAY[event_id] AS source_event_ids
 FROM staging_telemetry_enriched
 WHERE scenario IN ('spike', 'drift', 'late');
+
+INSERT INTO mart_late_sensor_readings
+SELECT
+  event_id,
+  'late_event.v1' AS schema_version,
+  tenant_id,
+  plant_id,
+  asset_id,
+  tag_id,
+  metric_name,
+  event_time,
+  ingest_time,
+  ingest_time AS watermark_time,
+  15.0 AS lateness_minutes,
+  'beyond_allowed_lateness' AS reason,
+  quality_flags
+FROM staging_telemetry_enriched
+WHERE scenario = 'late';
+
+INSERT INTO mart_stream_health
+SELECT
+  'stream_health.v1' AS schema_version,
+  'flink_anomalies_sql' AS job_name,
+  tenant_id,
+  900.0 AS watermark_lag_seconds,
+  CAST(SUM(CASE WHEN scenario = 'late' THEN 1 ELSE 0 END) AS INT) AS late_event_count,
+  'local_batch_complete' AS checkpoint_status,
+  MAX(ingest_time) AS observed_at
+FROM staging_telemetry_enriched
+GROUP BY tenant_id;

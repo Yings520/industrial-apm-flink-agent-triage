@@ -1,4 +1,4 @@
-.PHONY: setup generate-demo-data validate-schemas stream-start stream-health stream-stop stream-logs stream-create-topics stream-publish-raw flink-run-enrichment flink-run-anomalies stream-verify-replay stream-read-staging serving-start serving-health serving-stop serving-init serving-load-jobs serving-query phase3-report phase3-e2e test
+.PHONY: setup generate-demo-data validate-schemas stream-start stream-health stream-stop stream-logs stream-create-topics stream-publish-raw flink-run-enrichment flink-run-anomalies stream-verify-replay stream-read-staging serving-start serving-health serving-stop serving-init serving-load-jobs serving-query phase3-reset phase3-load-triage phase3-report phase3-e2e test
 
 PYTHON ?= ./.venv/bin/python
 OUTPUT_DIR ?= data
@@ -52,12 +52,13 @@ stream-read-staging:
 
 serving-start:
 	mkdir -p flink/lib reports
-	docker compose up -d redpanda redpanda-console flink-jobmanager flink-taskmanager doris
+	docker compose up -d redpanda redpanda-console flink-jobmanager flink-taskmanager
+	docker compose up -d --force-recreate doris
 
 serving-health:
 	docker compose ps
 	./scripts/doris-sql.sh -e "SHOW FRONTENDS; SHOW BACKENDS;"
-	./scripts/doris-sql.sh -e "SHOW BACKENDS;" | grep -q true
+	./scripts/doris-sql.sh -N -B -e "SHOW BACKENDS;" | awk -F '\t' '{ if ($$10 == "true") found = 1 } END { exit !found }'
 
 serving-stop:
 	docker compose down
@@ -75,6 +76,12 @@ serving-load-jobs:
 
 serving-query:
 	./scripts/doris-sql.sh sql/doris_inspection_queries.sql
+
+phase3-reset:
+	./scripts/phase3-reset.sh
+
+phase3-load-triage:
+	$(PYTHON) scripts/phase3-load-triage.py
 
 phase3-report:
 	$(PYTHON) -m src.dashboards.apm_report --output reports/phase3-serving-report.md
