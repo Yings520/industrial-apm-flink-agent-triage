@@ -30,11 +30,75 @@
     "plant_id": {
       "type": "string"
     },
+    "area_id": {
+      "type": "string",
+      "description": "Plant area / process unit (e.g. 'area_casting', 'area_utilities')"
+    },
+    "line_id": {
+      "type": "string",
+      "description": "Production line or cell (e.g. 'line_01', 'cell_packaging')"
+    },
     "asset_id": {
+      "type": "string"
+    },
+    "asset_name": {
       "type": "string"
     },
     "asset_type": {
       "type": "string"
+    },
+    "parent_asset_id": {
+      "type": "string",
+      "description": "Parent asset in physical hierarchy. Null for top-level assets."
+    },
+    "functional_location": {
+      "type": "string",
+      "description": "Functional location code (IEC 81346-inspired)"
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "serial_number": {
+      "type": "string"
+    },
+    "commissioned_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lifecycle_state": {
+      "type": "string",
+      "enum": ["active", "standby", "degraded", "maintenance", "decommissioned"]
+    },
+    "operating_context": {
+      "type": "object",
+      "description": "Nominal operating conditions for this asset",
+      "additionalProperties": false,
+      "properties": {
+        "design_capacity": {
+          "type": "number",
+          "description": "Design throughput (context-dependent unit)"
+        },
+        "design_capacity_unit": {
+          "type": "string"
+        },
+        "operating_mode": {
+          "type": "string",
+          "enum": ["continuous", "batch", "intermittent", "standby", "cyclic"]
+        },
+        "environmental_class": {
+          "type": "string",
+          "enum": ["indoor_controlled", "indoor_industrial", "outdoor_sheltered", "outdoor_exposed"]
+        },
+        "ambient_temp_range_min": {
+          "type": "number"
+        },
+        "ambient_temp_range_max": {
+          "type": "number"
+        }
+      }
     },
     "criticality": {
       "type": "string",
@@ -61,7 +125,20 @@
         "campus_facilities",
         "industrial_asset_management_generic"
       ]
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time",
+      "description": "SCD effective start"
+    },
+    "valid_to": {
+      "type": "string",
+      "format": "date-time",
+      "description": "SCD effective end. Null = current."
+    },
+    "is_current": {
+      "type": "boolean",
+      "description": "Current record indicator for SCD Type 2"
     }
   }
 }
-
