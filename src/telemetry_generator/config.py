@@ -83,7 +83,7 @@ def load_asset_config() -> AssetConfig:
     archetypes: dict[str, ArchetypeConfig] = {}
     for name, value in archetypes_raw.items():
         archetype = _as_mapping(value, f"assets.archetypes.{name}")
-        archetypes[name] = {
+        parsed: ArchetypeConfig = {
             "asset_types": _as_str_list(archetype["asset_types"], f"assets.archetypes.{name}.asset_types"),
             "expected_metrics": _as_str_list(
                 archetype["expected_metrics"], f"assets.archetypes.{name}.expected_metrics"
@@ -96,6 +96,22 @@ def load_asset_config() -> AssetConfig:
                 archetype["plausible_scenarios"], f"assets.archetypes.{name}.plausible_scenarios"
             ),
         }
+        if "components" in archetype:
+            raw_comps = _as_sequence(archetype["components"], f"assets.archetypes.{name}.components")
+            parsed["components"] = [
+                {
+                    "component_type": _as_str(
+                        _as_mapping(c, f"assets.archetypes.{name}.components[{i}]")["component_type"],
+                        f"assets.archetypes.{name}.components[{i}].component_type",
+                    ),
+                    "count_per_asset": _as_int(
+                        _as_mapping(c, f"assets.archetypes.{name}.components[{i}]")["count_per_asset"],
+                        f"assets.archetypes.{name}.components[{i}].count_per_asset",
+                    ),
+                }
+                for i, c in enumerate(raw_comps)
+            ]
+        archetypes[name] = parsed
 
     tenants: list[TenantConfig] = []
     for index, value in enumerate(tenants_raw):

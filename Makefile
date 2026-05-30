@@ -4,6 +4,7 @@ PYTHON ?= ./.venv/bin/python
 OUTPUT_DIR ?= data
 SEED ?= 42
 PROFILE ?= demo
+FAULT_DAYS ?= 30
 FLINK_SQL ?= ./scripts/flink-sql-client.sh
 
 setup:
@@ -13,6 +14,9 @@ setup:
 
 generate-demo-data:
 	$(PYTHON) -m src.telemetry_generator.generate_events --profile $(PROFILE) --seed $(SEED) --output-dir $(OUTPUT_DIR)
+
+generate-fault-data:
+	$(PYTHON) -m src.telemetry_generator.generate_fault_data --seed $(SEED) --days $(FAULT_DAYS)
 
 validate-schemas:
 	$(PYTHON) -m src.telemetry_generator.schema_validation --input $(OUTPUT_DIR)/generated --output-dir $(OUTPUT_DIR) --profile $(PROFILE) --schema raw_sensor_event

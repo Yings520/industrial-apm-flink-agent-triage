@@ -16,6 +16,7 @@ class ArchetypeConfig(TypedDict):
     units: list[str]
     threshold_profile_id: str
     plausible_scenarios: list[str]
+    components: NotRequired[list[AssetArchetypeComponents]]
 
 
 class PlantConfig(TypedDict):
