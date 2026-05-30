@@ -2,6 +2,74 @@
 
 JSON Schema files in `contracts/` are the only machine-readable contract source. The YAML files in `configs/` define the portfolio, tag metadata, scenario inventory, anomaly rules, streaming topic defaults, and prompt placeholders that drive synthetic telemetry.
 
+## Entity Relationship Overview
+
+```mermaid
+erDiagram
+  dim_site ||--o{ dim_asset : "located at"
+  dim_asset ||--o{ dim_component : "composed of"
+  dim_asset ||--o{ dim_sensor_tag : "monitored by"
+  dim_component ||--o{ dim_sensor_tag : "monitored by"
+  dim_component }o--o{ dim_failure_mode : "susceptible to"
+  dim_sensor_tag ||--o{ dwd_apm_sensor_readings_rt : "produces"
+  dwd_apm_sensor_readings_rt ||--o{ fact_apm_quality_events : "triggers"
+  dwd_apm_sensor_readings_rt ||--o{ fact_apm_anomaly_events : "supports window"
+  dim_threshold_profile ||--o{ fact_apm_anomaly_events : "configured as"
+  fact_apm_anomaly_events ||--o{ serving_apm_triage_evidence : "generates"
+  serving_apm_triage_evidence ||--o{ fact_apm_agent_recommendations : "feeds"
+  fact_apm_anomaly_events ||--o{ fact_apm_incidents : "grouped into"
+  fact_apm_incidents ||--o{ fact_apm_alert_routing : "routed via"
+  fact_apm_incidents ||--o{ fact_apm_operator_feedback : "receives"
+  fact_apm_operator_feedback }o--o| dim_work_order : "references"
+  dim_failure_mode ||--o{ dim_work_order : "classified by"
+  fact_apm_quality_events ||--o{ serving_apm_triage_evidence : "caveats"
+```
+
+## Grain Reference
+
+| Table | Grain |
+|-------|-------|
+| `dim_site` | one row per (tenant_id, site_id) |
+| `dim_asset` | one row per (tenant_id, asset_id, valid_from) — SCD Type 2 |
+| `dim_component` | one row per (tenant_id, component_id, valid_from) — SCD Type 2 |
+| `dim_sensor_tag` | one row per (tenant_id, tag_id, valid_from) — SCD Type 2 |
+| `dim_metric` | one row per (metric_name, unit) |
+| `dim_threshold_profile` | one row per (profile_id, version, effective_from) — SCD Type 2 |
+| `dim_failure_mode` | one row per (failure_mode_id) |
+| `dim_work_order` | one row per (work_order_id) |
+| `dwd_apm_sensor_readings_rt` | one row per (tenant_id, tag_id, event_time, event_id) |
+| `fact_apm_anomaly_events` | one row per (anomaly_id) — one anomaly per rule-asset-tag-window |
+| `fact_apm_late_sensor_readings` | one row per (event_id, tenant_id) |
+| `fact_apm_stream_health_snapshots` | one row per (job_name, tenant_id, observed_at) |
+| `fact_apm_quality_events` | one row per (quality_event_id) |
+| `serving_apm_triage_evidence` | one row per (evidence_id, tenant_id, anomaly_id) |
+| `fact_apm_agent_recommendations` | one row per (recommendation_id, tenant_id, anomaly_id) |
+| `fact_apm_incidents` | one row per (incident_id, tenant_id, correlation_key) |
+| `fact_apm_alert_routing` | one row per (route_id, incident_id, tenant_id) |
+| `fact_apm_operator_feedback` | one row per (feedback_id, tenant_id) |
+| `fact_apm_llm_invocations` | one row per (invocation_id) |
+
+## MVP vs Production Target
+
+| Dimension | Current MVP | Production Target (this upgrade) |
+|-----------|-------------|----------------------------------|
+| **Asset Hierarchy** | tenant → site → plant → asset (flat) | tenant → site → area → plant → line → asset → component → sensor tag + functional location |
+| **Component Model** | Not modeled | dim_component with SCD Type 2, lifecycle_state, criticality |
+| **Sensor Tag Context** | tag_id + tag_name only | full measurement point: signal_type, sampling_rate, normal_range, engineering_limits, calibration_status |
+| **Dimensional Model** | String duplication in fact tables | Star schema: dim_asset, dim_component, dim_sensor_tag, dim_metric, dim_threshold_profile, dim_failure_mode, dim_work_order, dim_site |
+| **SCD Support** | None | Type 2 SCD on dim_asset, dim_component, dim_sensor_tag, dim_threshold_profile |
+| **Failure Mode** | Not modeled | dim_failure_mode with FMECA per component type, PF-interval hints, related metrics |
+| **Work Order / Inspection** | Not modeled | dim_work_order with problem/cause/remedy codes, parts, downtime, inspection results |
+| **Operating Context** | Not modeled | operating_mode, environmental_class, design_capacity in asset metadata |
+| **Quality Events** | String quality_flags in VARCHAR | Structured quality_event_id references with detected_at, quality_type, resolution_status, source_event_ids |
+| **Rule Governance** | rule_id + method + severity only | Version, effective_from/to, tenant/asset_type/component_type scope, owner, approval_status |
+| **Flink Enrichment** | Hardcoded CASE for 2 assets, 3 metrics | File-based tag_metadata lookup join, multi-tenant parameterized |
+| **Scenario Field** | Required in production contract, carries detection label | Moved to synthetic_metadata; optional in contracts |
+| **Grain Documentation** | None | Explicit grain per table |
+| **Fault Type** | Not distinguished | fault_type: asset_fault vs sensor_fault vs operating_context_change |
+| **Closed Loop** | anomaly → triage → feedback | anomaly → failure_mode → work_order → inspection → feedback |
+| **FK Traceability** | Implicit by convention | Explicit relationship documentation + FK column naming conventions |
+
 ## Schema Versioning
 
 Every event or output contract includes `schema_version`. Producers must emit the exact version expected by the schema, such as `sensor_event.v1`, so downstream Kafka topics, Flink jobs, validation summaries, and triage services can reject incompatible records before stateful processing.
@@ -167,6 +235,8 @@ Machine contract: `agent_explanation.schema.json`
 
 Unsupported, malformed, cross-tenant, evidence-free, or overclaiming output is rejected or quarantined before being shaped for `fact_apm_agent_recommendations`.
 
+`fact_apm_operator_feedback` stores operator feedback for alert quality, routing quality, and triage quality evaluation. It is a local/demo evaluation data set, not a production operator audit trail.
+
 ## operator_feedback
 
 Machine contract: `operator_feedback.schema.json`
@@ -176,6 +246,7 @@ Machine contract: `operator_feedback.schema.json`
 | feedback_id | string | yes | `fb_000001` | string | Feedback identity |
 | schema_version | string | yes | `operator_feedback.v1` | fixed version | Contract compatibility |
 | tenant_id | string | yes | `tenant_apac_ops` | string | Tenant isolation |
+| incident_id | string | yes | `inc_abc123` | string | Incident-level aggregation join |
 | anomaly_id | string | yes | `anom_000001` | string | Alert join |
 | operator_id | string | yes | `operator_17` | string | Audit trail |
 | is_true_positive | boolean | yes | `true` | boolean | Model/rule quality labels |

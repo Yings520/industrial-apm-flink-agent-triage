@@ -1,21 +1,10 @@
+-- Flink enrichment job template
+-- Usage: flink-sql-client.sh -f sql/flink_enrichment_template.sql -Dtenant_id=tenant_northwind
+
 SET 'execution.runtime-mode' = 'batch';
 SET 'table.local-time-zone' = 'UTC';
 
-CREATE TABLE tag_metadata (
-  tag_id_prefix STRING,
-  plant_id STRING,
-  asset_id STRING,
-  asset_name STRING,
-  metric_name STRING,
-  threshold_profile_id STRING
-) WITH (
-  'connector' = 'filesystem',
-  'path' = '/opt/flink/data/tag_metadata.csv',
-  'format' = 'csv',
-  'csv.ignore-parse-errors' = 'true'
-);
-
-CREATE TABLE raw_sensor_events (
+CREATE TEMPORARY TABLE raw_sensor_events (
   event_id STRING,
   event_time STRING,
   ingest_time STRING,
@@ -30,16 +19,30 @@ CREATE TABLE raw_sensor_events (
   `value` DOUBLE
 ) WITH (
   'connector' = 'kafka',
-  'topic' = 'tenant_northwind.raw_apm__sensor_readings.v1',
+  'topic' = '${tenant_id}.raw_apm__sensor_readings.v1',
   'properties.bootstrap.servers' = 'redpanda:19092',
-  'properties.group.id' = 'phase02-flink-enrichment',
+  'properties.group.id' = 'flink-enrichment-${tenant_id}',
   'scan.startup.mode' = 'earliest-offset',
   'scan.bounded.mode' = 'latest-offset',
   'format' = 'json',
   'json.ignore-parse-errors' = 'true'
 );
 
-CREATE TABLE staging_telemetry_enriched (
+CREATE TEMPORARY TABLE tag_metadata (
+  tag_id_prefix STRING,
+  plant_id STRING,
+  asset_id STRING,
+  asset_name STRING,
+  metric_name STRING,
+  threshold_profile_id STRING
+) WITH (
+  'connector' = 'filesystem',
+  'path' = '/opt/flink/data/tag_metadata.csv',
+  'format' = 'csv',
+  'csv.ignore-parse-errors' = 'true'
+);
+
+CREATE TEMPORARY TABLE staging_telemetry_enriched (
   event_id STRING,
   schema_version STRING,
   tenant_id STRING,
@@ -59,7 +62,7 @@ CREATE TABLE staging_telemetry_enriched (
   scenario STRING
 ) WITH (
   'connector' = 'kafka',
-  'topic' = 'tenant_northwind.staging_apm__sensor_readings.v1',
+  'topic' = '${tenant_id}.staging_apm__sensor_readings.v1',
   'properties.bootstrap.servers' = 'redpanda:19092',
   'format' = 'json'
 );
@@ -84,5 +87,5 @@ SELECT
   r.quality_flags,
   r.scenario
 FROM raw_sensor_events r
-LEFT JOIN tag_metadata m ON r.tag_id LIKE CONCAT(m.tag_id_prefix, '%')
-WHERE r.tenant_id = 'tenant_northwind';
+LEFT JOIN tag_metadata m
+  ON r.tag_id LIKE CONCAT(m.tag_id_prefix, '%');

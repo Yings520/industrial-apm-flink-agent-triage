@@ -113,3 +113,67 @@ Phase 3 is not considered passed unless Doris query output or the generated repo
 `make phase3-e2e` is reset-first for repeatability: it deletes/recreates the local `tenant_northwind` Redpanda topics, truncates Phase 3 Doris serving tables, reloads Routine Load jobs from the beginning, and fails unless Doris has nonzero sensor, anomaly, late-event, stream-health, quality-event, triage-evidence, and recommendation rows.
 
 LLM-assisted triage remains provider-optional. The default fallback path generates evidence-grounded findings and recommended checks without paid LLM credentials. The LLM/fallback writes recommendation output; it does not generate evidence or detect anomalies.
+
+## Phase 4 Alert Workflow Quickstart
+
+Phase 4 converts anomalies into incident-level alerts, adds LLM/fallback triage with invocation audit, Teams card routing with simulated notification fallback, operator feedback storage, and reliability documentation.
+
+```bash
+make phase4-e2e
+```
+
+This reset-first E2E path runs the Phase 3 sequence, then loads Phase 4 incidents, routing records, LLM invocation audit, and demo feedback into Doris.
+
+Optional environment variables:
+
+- `OPENAI_API_KEY` — OpenAI-compatible API key for real LLM triage.
+- `OPENAI_BASE_URL` — Custom API base URL for compatible providers (defaults to `https://api.openai.com/v1`).
+- `OPENAI_MODEL` — Model name (e.g. `gpt-4o-mini`).
+- `TEAMS_WEBHOOK_URL` — Teams incoming webhook URL for card notifications.
+
+When `OPENAI_API_KEY` or `OPENAI_MODEL` is missing, fallback recommendations are used. When `TEAMS_WEBHOOK_URL` is missing, Teams notification is recorded as simulated and the workflow continues.
+
+Phase 4 Doris tables:
+
+- `fact_apm_incidents` — Incident-level alert records with correlation key and cooldown.
+- `fact_apm_alert_routing` — Routing status (pending/simulated/delivered/failed).
+- `fact_apm_operator_feedback` — Demo/evaluation feedback rows (not a production audit trail).
+- `fact_apm_llm_invocations` — LLM invocation audit with raw response and quarantine reason.
+
+Inspection surfaces:
+
+```bash
+make serving-query           # All Phase 3 + Phase 4 table counts and samples
+make phase4-load-incidents   # Load Phase 4 incidents/routing/feedback/audit
+```
+
+### CI
+
+Core tests run without paid LLM API calls or Teams webhook in CI (`.github/workflows/ci.yml`). Docker E2E (`make phase3-e2e`, `make phase4-e2e`) is local-only. CI uses `python -m pytest` with mocked transports.
+
+### Failure Mode Documentation
+
+`docs/failure-modes.md` covers 11 system failure modes with detection signals, mitigation, test evidence, and portfolio claim boundaries. Includes: schema drift, late data spike, sensor outage, Kafka lag, Flink checkpoint failure, alert storm, LLM outage, LLM invalid/hallucinated output, tenant leakage, Teams webhook failure, and cost spike.
+
+Phase 4 triage is LLM-assisted alert triage for operator support. It provides root-cause hypotheses and evidence-grounded summaries. It does not claim autonomous diagnosis, automatic remediation, production SLA, real factory deployment, or real downtime/MTTR reduction.
+
+## Model Maturity
+
+This project is a **production-aware portfolio MVP**. The table below maps current and planned data model capabilities.
+
+| Data Domain | MVP (Phases 1-4) | Production Target (Phase 5+) |
+|-------------|-------------------|------------------------------|
+| Asset Registry | tenant/site/plant/asset (flat) | Full hierarchy + SCD Type 2 + component |
+| Sensor Tags | tag_id/name only | Measurement point context + engineering limits |
+| Telemetry | event_time/ingest_time, 5 metrics | + sampling_rate, operating_context |
+| Anomaly Detection | 5 rule-based scenarios | + failure_mode correlation, fault_type |
+| Quality | 7 check types, string flags | Structured quality_event_id references |
+| Failure Mode | Not modeled | FMECA catalog per component type |
+| Work Order | Not modeled | WO/inspection with cause/remedy codes |
+| Triage Evidence | Deterministic, tenant-safe | + failure_mode, work_order, quality_event context |
+| Rule Governance | rule_id/method/severity only | Version, scope, owner, approval |
+| Flink SQL | Hardcoded per tenant | Parameterized, multi-tenant, metadata-driven |
+
+**Intended audience:** Data engineering / streaming platform reviewers evaluating contract design, event-time processing, and LLM-assisted triage architecture.
+
+**Not claimed:** Production deployment, autonomous diagnosis, RUL prediction, certified safety actions, or real MTTR reduction.
