@@ -65,6 +65,22 @@ services:
       - ./flink/lib:/opt/flink/usrlib:ro
       - ./sql:/opt/flink/sql:ro
 
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=apm_metadata
+      - POSTGRES_USER=apm
+      - POSTGRES_PASSWORD=apm_secret
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./sql/postgres_init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apm -d apm_metadata"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   doris:
     image: apache/doris:3.0.5-all
     entrypoint: ["bash", "-lc", "bash entry_point.sh && tail -f /dev/null"]

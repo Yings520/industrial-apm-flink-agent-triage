@@ -25,6 +25,25 @@ CREATE TABLE raw_sensor_events (
   'json.ignore-parse-errors' = 'true'
 );
 
+CREATE TABLE sensor_tags_lookup (
+  tenant_id STRING,
+  tag_id_pattern STRING,
+  plant_id STRING,
+  asset_id STRING,
+  asset_name STRING,
+  metric_name STRING,
+  threshold_profile_id STRING
+) WITH (
+  'connector' = 'jdbc',
+  'url' = 'jdbc:postgresql://postgres:5432/apm_metadata',
+  'table-name' = 'sensor_tags',
+  'username' = 'apm',
+  'password' = 'apm_secret',
+  'lookup.cache' = 'PARTIAL',
+  'lookup.partial-cache.max-rows' = '500',
+  'lookup.partial-cache.expire-after-write' = '60min'
+);
+
 CREATE TABLE staging_telemetry_enriched (
   event_id STRING,
   schema_version STRING,
@@ -52,35 +71,25 @@ CREATE TABLE staging_telemetry_enriched (
 
 INSERT INTO staging_telemetry_enriched
 SELECT
-  event_id,
+  r.event_id,
   'enriched_telemetry.v1' AS schema_version,
-  tenant_id,
-  'plant_northwind_mfg_01' AS plant_id,
-  CASE
-    WHEN tag_id LIKE 'tag_northwind_mfg_01_0001_%' THEN 'asset_northwind_mfg_01_0001'
-    WHEN tag_id LIKE 'tag_northwind_mfg_01_0002_%' THEN 'asset_northwind_mfg_01_0002'
-    ELSE 'asset_unknown'
-  END AS asset_id,
-  CASE
-    WHEN tag_id LIKE 'tag_northwind_mfg_01_0001_%' THEN 'Cnc Machine 0001'
-    WHEN tag_id LIKE 'tag_northwind_mfg_01_0002_%' THEN 'Conveyor 0002'
-    ELSE 'Unknown Asset'
-  END AS asset_name,
-  tag_id,
-  tag_name,
-  CASE
-    WHEN tag_id LIKE '%_temperature' THEN 'temperature'
-    WHEN tag_id LIKE '%_vibration' THEN 'vibration'
-    WHEN tag_id LIKE '%_power_draw' THEN 'power_draw'
-    ELSE 'unknown'
-  END AS metric_name,
-  'threshold_manufacturing_rotating' AS threshold_profile_id,
-  event_time,
-  ingest_time,
-  `value`,
-  unit,
-  source_system,
-  quality_flags,
-  scenario
-FROM raw_sensor_events
-WHERE tenant_id = 'tenant_northwind';
+  r.tenant_id,
+  COALESCE(m.plant_id, 'plant_unknown') AS plant_id,
+  COALESCE(m.asset_id, 'asset_unknown') AS asset_id,
+  COALESCE(m.asset_name, 'Unknown Asset') AS asset_name,
+  r.tag_id,
+  r.tag_name,
+  COALESCE(m.metric_name, 'unknown') AS metric_name,
+  COALESCE(m.threshold_profile_id, 'threshold_default') AS threshold_profile_id,
+  r.event_time,
+  r.ingest_time,
+  r.`value`,
+  r.unit,
+  r.source_system,
+  r.quality_flags,
+  r.scenario
+FROM raw_sensor_events r
+LEFT JOIN sensor_tags_lookup FOR SYSTEM_TIME AS OF r.event_time AS m
+  ON r.tenant_id = m.tenant_id
+  AND r.tag_id LIKE CONCAT(m.tag_id_pattern, '%')
+WHERE r.tenant_id = 'tenant_northwind';

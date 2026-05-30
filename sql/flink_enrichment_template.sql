@@ -1,10 +1,12 @@
--- Flink enrichment job template
+-- Flink enrichment job template (production target)
 -- Usage: flink-sql-client.sh -f sql/flink_enrichment_template.sql -Dtenant_id=tenant_northwind
+-- Metadata source: PostgreSQL via JDBC lookup join (non-blocking, cached)
+-- Production target: PostgreSQL + Debezium CDC → Kafka changelog → Flink state store
 
 SET 'execution.runtime-mode' = 'batch';
 SET 'table.local-time-zone' = 'UTC';
 
-CREATE TEMPORARY TABLE raw_sensor_events (
+CREATE TABLE raw_sensor_events (
   event_id STRING,
   event_time STRING,
   ingest_time STRING,
@@ -28,21 +30,27 @@ CREATE TEMPORARY TABLE raw_sensor_events (
   'json.ignore-parse-errors' = 'true'
 );
 
-CREATE TEMPORARY TABLE tag_metadata (
-  tag_id_prefix STRING,
+CREATE TABLE sensor_tags_lookup (
+  tenant_id STRING,
+  tag_id_pattern STRING,
   plant_id STRING,
   asset_id STRING,
   asset_name STRING,
   metric_name STRING,
   threshold_profile_id STRING
 ) WITH (
-  'connector' = 'filesystem',
-  'path' = '/opt/flink/data/tag_metadata.csv',
-  'format' = 'csv',
-  'csv.ignore-parse-errors' = 'true'
+  'connector' = 'jdbc',
+  'url' = 'jdbc:postgresql://postgres:5432/apm_metadata',
+  'table-name' = 'sensor_tags',
+  'username' = 'apm',
+  'password' = 'apm_secret',
+  'lookup.cache' = 'PARTIAL',
+  'lookup.partial-cache.max-rows' = '500',
+  'lookup.partial-cache.expire-after-write' = '60min',
+  'lookup.partial-cache.expire-after-access' = '10min'
 );
 
-CREATE TEMPORARY TABLE staging_telemetry_enriched (
+CREATE TABLE staging_telemetry_enriched (
   event_id STRING,
   schema_version STRING,
   tenant_id STRING,
@@ -87,5 +95,6 @@ SELECT
   r.quality_flags,
   r.scenario
 FROM raw_sensor_events r
-LEFT JOIN tag_metadata m
-  ON r.tag_id LIKE CONCAT(m.tag_id_prefix, '%');
+LEFT JOIN sensor_tags_lookup FOR SYSTEM_TIME AS OF r.event_time AS m
+  ON r.tenant_id = m.tenant_id
+  AND r.tag_id LIKE CONCAT(m.tag_id_pattern, '%');
