@@ -111,6 +111,9 @@ Use simple English field names and industrially plausible metric names:
 Sampling strategy:
 
 - Raw telemetry emits at `1 Hz` for each tag.
+- The Kafka mock producer supports two modes:
+  - `backfill_replay`: accelerated replay of 30 days of historical data for degradation, RUL, maintenance, and dashboard context.
+  - `realtime_live`: continuous realtime generation at 1 Hz after the historical replay has completed.
 - 15-minute aggregates are the main analytics and dashboard layer.
 - The generator should support deterministic seeds for reproducible tests.
 - Kafka remains the primary delivery target for raw events.
@@ -293,6 +296,13 @@ Kafka raw event topic:
 ```text
 tenant_id.raw_apm__sensor_readings.v1
 ```
+
+Telemetry producer behavior:
+
+- Start with `backfill_replay` to publish 30 days of historical synthetic telemetry through Kafka at an accelerated rate.
+- Preserve original `event_time` values from the historical timeline while using current `ingest_time` during replay, so Flink event-time, watermark, and lateness behavior remain testable.
+- After backfill completes, switch to `realtime_live` and emit one event per sensor tag per second.
+- Continue using the same scenario state machine so the live stream extends the historical degradation, maintenance, or recovery story instead of becoming unrelated random data.
 
 Recommended raw event extensions:
 
@@ -495,6 +505,7 @@ Minimum demo acceptance criteria:
 ## Implementation Defaults
 
 - Generate a smaller replayable 30-day demo subset first instead of fully materializing every asset/tag combination. This keeps local Kafka, Flink, Doris, and Grafana runs practical while still proving the end-to-end pattern.
+- Run the Kafka mock producer in two phases: accelerated `backfill_replay` for the 30-day historical timeline, then `realtime_live` at 1 Hz for live dashboard and streaming verification.
 - Grafana should query curated Doris serving views by default. Raw tables remain available for inspection and debugging.
 - Keep the raw Kafka contract tag-centric where possible. Introduce `measurement_point_id`, component context, and failure-mode context during enrichment, while allowing synthetic metadata on raw events for deterministic replay.
 - Generate RUL predictions with a deterministic synthetic model first. Add a model interface later only if the project needs to demonstrate ML integration beyond APM data plumbing and dashboard storytelling.
