@@ -1,8 +1,8 @@
-# Asset Performance Management Data Modeling Skill Implementation Plan
+# APM Data Modeling Skill Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a reusable personal Codex skill named `asset-performance-management-data-modeling` for APM, IIoT, condition monitoring, PdM evidence, and LLM-assisted operator triage data modeling.
+**Goal:** Build a reusable personal Codex skill named `apm-data-modeling` for APM, IIoT, condition monitoring, PdM evidence, and LLM-assisted operator triage data modeling.
 
 **Architecture:** Create one focused skill directory under the personal Codex skills library. Keep `SKILL.md` operational and concise, with trigger rules, workflow, standards-aware modeling, core domains, artifact rules, terminology guardrails, review checklist, anti-patterns, and a compact glossary. Put longer reusable artifact examples in `references/artifact-templates.md` so the main skill stays readable.
 
@@ -14,15 +14,15 @@
 
 Use this approved design as the source of truth:
 
-- `/Users/ysc/Documents/Data_Engineering/projects/industrial-apm-flink-agent-triage/docs/superpowers/specs/2026-05-30-asset-performance-management-data-modeling-skill-design.md`
+- `/Users/ysc/Documents/Data_Engineering/projects/industrial-apm-flink-agent-triage/docs/superpowers/specs/2026-05-30-apm-data-modeling-skill-design.md`
 
 ## File Structure
 
 Create these files during implementation:
 
-- Create: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/SKILL.md`
+- Create: `/Users/ysc/.codex/skills/apm-data-modeling/SKILL.md`
   - Responsibility: Main skill instructions. Keep it operational, action-oriented, and usable without opening extra files.
-- Create: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/references/artifact-templates.md`
+- Create: `/Users/ysc/.codex/skills/apm-data-modeling/references/artifact-templates.md`
   - Responsibility: Reusable examples for design output, JSON Schema, SQL DDL, dbt model naming, OpenAPI shape, quality checks, and review findings.
 
 No repository source files need to change during skill implementation.
@@ -34,8 +34,8 @@ The target skill directory is outside this repository. If the implementation env
 ### Task 1: Create Skill Directory Skeleton
 
 **Files:**
-- Create: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/`
-- Create: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/references/`
+- Create: `/Users/ysc/.codex/skills/apm-data-modeling/`
+- Create: `/Users/ysc/.codex/skills/apm-data-modeling/references/`
 
 - [ ] **Step 1: Verify the target parent exists**
 
@@ -52,7 +52,7 @@ Expected: command succeeds and lists existing skills.
 Run:
 
 ```bash
-mkdir -p /Users/ysc/.codex/skills/asset-performance-management-data-modeling/references
+mkdir -p /Users/ysc/.codex/skills/apm-data-modeling/references
 ```
 
 Expected: command succeeds without output.
@@ -62,7 +62,7 @@ Expected: command succeeds without output.
 Run:
 
 ```bash
-rtk ls /Users/ysc/.codex/skills/asset-performance-management-data-modeling
+rtk ls /Users/ysc/.codex/skills/apm-data-modeling
 ```
 
 Expected: output includes `references`.
@@ -70,15 +70,15 @@ Expected: output includes `references`.
 ### Task 2: Write Main Skill File
 
 **Files:**
-- Create: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/SKILL.md`
+- Create: `/Users/ysc/.codex/skills/apm-data-modeling/SKILL.md`
 
 - [ ] **Step 1: Create `SKILL.md` with frontmatter and complete operating instructions**
 
-Write this exact content to `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/SKILL.md`:
+Write this exact content to `/Users/ysc/.codex/skills/apm-data-modeling/SKILL.md`:
 
 ````markdown
 ---
-name: asset-performance-management-data-modeling
+name: apm-data-modeling
 description: Use when designing, reviewing, or extending data models for Asset Performance Management (APM), Industrial IoT telemetry, condition monitoring, predictive-maintenance evidence, anomaly events, asset health products, work order context, or LLM-assisted operator triage.
 ---
 
@@ -431,7 +431,7 @@ Open `references/artifact-templates.md` when the user asks for concrete examples
 Run:
 
 ```bash
-rtk rg -n "^---$|^name: asset-performance-management-data-modeling|^description:|^# Asset Performance Management Data Modeling|^## Standards-Aware Modeling|^## Core APM Data Domains|^## Artifact Rules|^## Review Checklist|^## Anti-Patterns" /Users/ysc/.codex/skills/asset-performance-management-data-modeling/SKILL.md
+rtk rg -n "^---$|^name: apm-data-modeling|^description:|^# Asset Performance Management Data Modeling|^## Standards-Aware Modeling|^## Core APM Data Domains|^## Artifact Rules|^## Review Checklist|^## Anti-Patterns" /Users/ysc/.codex/skills/apm-data-modeling/SKILL.md
 ```
 
 Expected: output includes the frontmatter markers, `name`, `description`, title, and all listed sections.
@@ -439,11 +439,11 @@ Expected: output includes the frontmatter markers, `name`, `description`, title,
 ### Task 3: Write Artifact Templates Reference
 
 **Files:**
-- Create: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/references/artifact-templates.md`
+- Create: `/Users/ysc/.codex/skills/apm-data-modeling/references/artifact-templates.md`
 
 - [ ] **Step 1: Create the reference file with reusable examples**
 
-Write this exact content to `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/references/artifact-templates.md`:
+Write this exact content to `/Users/ysc/.codex/skills/apm-data-modeling/references/artifact-templates.md`:
 
 ````markdown
 # APM Data Modeling Artifact Templates
@@ -669,7 +669,7 @@ Recommended fixes:
 Run:
 
 ```bash
-rtk rg -n "^# APM Data Modeling Artifact Templates|^## Design Output Template|^## JSON Schema Skeleton|^## SQL DDL Skeleton|^## dbt Model Naming|^## OpenAPI Shape|^## Quality Check Examples|^## Review Output Template" /Users/ysc/.codex/skills/asset-performance-management-data-modeling/references/artifact-templates.md
+rtk rg -n "^# APM Data Modeling Artifact Templates|^## Design Output Template|^## JSON Schema Skeleton|^## SQL DDL Skeleton|^## dbt Model Naming|^## OpenAPI Shape|^## Quality Check Examples|^## Review Output Template" /Users/ysc/.codex/skills/apm-data-modeling/references/artifact-templates.md
 ```
 
 Expected: output includes all listed headings.
@@ -677,15 +677,15 @@ Expected: output includes all listed headings.
 ### Task 4: Validate Skill Content
 
 **Files:**
-- Validate: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/SKILL.md`
-- Validate: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/references/artifact-templates.md`
+- Validate: `/Users/ysc/.codex/skills/apm-data-modeling/SKILL.md`
+- Validate: `/Users/ysc/.codex/skills/apm-data-modeling/references/artifact-templates.md`
 
 - [ ] **Step 1: Check for unresolved draft markers**
 
 Run:
 
 ```bash
-rtk rg -n "T[B]D|TO[D]O|FIX[M]E|\\?\\?|place[h]older|fill[ ]in|implement[ ]later" /Users/ysc/.codex/skills/asset-performance-management-data-modeling
+rtk rg -n "T[B]D|TO[D]O|FIX[M]E|\\?\\?|place[h]older|fill[ ]in|implement[ ]later" /Users/ysc/.codex/skills/apm-data-modeling
 ```
 
 Expected: no matches and exit code 1.
@@ -695,7 +695,7 @@ Expected: no matches and exit code 1.
 Run:
 
 ```bash
-rtk rg -n "autonomous diagnosis|automatic remediation|guaranteed RUL|standard-compliant|compliance claims|LLM output should not create new evidence|anomaly event is evidence" /Users/ysc/.codex/skills/asset-performance-management-data-modeling
+rtk rg -n "autonomous diagnosis|automatic remediation|guaranteed RUL|standard-compliant|compliance claims|LLM output should not create new evidence|anomaly event is evidence" /Users/ysc/.codex/skills/apm-data-modeling
 ```
 
 Expected: output includes matches in `SKILL.md`.
@@ -705,7 +705,7 @@ Expected: output includes matches in `SKILL.md`.
 Run:
 
 ```bash
-rtk wc -l /Users/ysc/.codex/skills/asset-performance-management-data-modeling/SKILL.md /Users/ysc/.codex/skills/asset-performance-management-data-modeling/references/artifact-templates.md
+rtk wc -l /Users/ysc/.codex/skills/apm-data-modeling/SKILL.md /Users/ysc/.codex/skills/apm-data-modeling/references/artifact-templates.md
 ```
 
 Expected: `SKILL.md` is under 360 lines and `artifact-templates.md` is under 260 lines.
@@ -715,7 +715,7 @@ Expected: `SKILL.md` is under 360 lines and `artifact-templates.md` is under 260
 Run:
 
 ```bash
-rtk sed -n '1,260p' /Users/ysc/.codex/skills/asset-performance-management-data-modeling/SKILL.md
+rtk sed -n '1,260p' /Users/ysc/.codex/skills/apm-data-modeling/SKILL.md
 ```
 
 Expected: the file is readable, operational, and does not require opening the reference file for ordinary design/review work.
@@ -723,8 +723,8 @@ Expected: the file is readable, operational, and does not require opening the re
 ### Task 5: Commit Skill Files If The Skills Directory Is Git-Tracked
 
 **Files:**
-- Check: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/SKILL.md`
-- Check: `/Users/ysc/.codex/skills/asset-performance-management-data-modeling/references/artifact-templates.md`
+- Check: `/Users/ysc/.codex/skills/apm-data-modeling/SKILL.md`
+- Check: `/Users/ysc/.codex/skills/apm-data-modeling/references/artifact-templates.md`
 
 - [ ] **Step 1: Check whether `/Users/ysc/.codex/skills` is inside a git repository**
 
@@ -741,7 +741,7 @@ Expected: either prints a git root path or fails with `not a git repository`.
 Run only if Step 1 fails:
 
 ```bash
-rtk ls /Users/ysc/.codex/skills/asset-performance-management-data-modeling
+rtk ls /Users/ysc/.codex/skills/apm-data-modeling
 ```
 
 Expected: output includes `SKILL.md` and `references`.
@@ -754,14 +754,14 @@ Run only if Step 1 prints a git root:
 git -C /Users/ysc/.codex/skills status --short
 ```
 
-Expected: output includes only the new `asset-performance-management-data-modeling` skill files or clearly unrelated pre-existing changes.
+Expected: output includes only the new `apm-data-modeling` skill files or clearly unrelated pre-existing changes.
 
 - [ ] **Step 4: If it is a git repository, commit only the new skill files**
 
 Run only if Step 1 prints a git root:
 
 ```bash
-git -C /Users/ysc/.codex/skills add asset-performance-management-data-modeling/SKILL.md asset-performance-management-data-modeling/references/artifact-templates.md
+git -C /Users/ysc/.codex/skills add apm-data-modeling/SKILL.md apm-data-modeling/references/artifact-templates.md
 git -C /Users/ysc/.codex/skills commit -m "feat: add APM data modeling skill"
 ```
 

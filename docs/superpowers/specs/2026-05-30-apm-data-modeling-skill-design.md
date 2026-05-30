@@ -1,10 +1,10 @@
-# Asset Performance Management Data Modeling Skill Design
+# APM Data Modeling Skill Design
 
 Date: 2026-05-30
 
 ## Purpose
 
-Create a reusable personal Codex skill named `asset-performance-management-data-modeling`.
+Create a reusable personal Codex skill named `apm-data-modeling`.
 
 Use this skill when designing, reviewing, or extending data models for Asset Performance Management (APM), Industrial IoT, condition monitoring, predictive maintenance evidence, anomaly events, asset health data products, and LLM-assisted operator triage.
 
