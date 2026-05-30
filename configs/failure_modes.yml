@@ -1,0 +1,247 @@
+schema_version: failure_modes.v1
+description: FMECA catalog per component type. Provides interpretation context for anomaly triage.
+failure_modes:
+  - failure_mode_id: fm_bearing_inner_race_wear
+    component_type: bearing
+    failure_mode_name: bearing_inner_race_wear
+    failure_effect: Increased vibration, elevated temperature. Progressive inner race spalling leading to bearing seizure.
+    criticality: high
+    detectability: medium
+    related_metrics:
+      - metric_name: vibration
+        expected_direction: increasing
+        typical_threshold: "> 7.1 mm/s ISO 10816-3 zone C/D boundary"
+      - metric_name: temperature
+        expected_direction: increasing
+        typical_threshold: "> 85C for standard grease"
+    recommended_checks:
+      - Measure vibration spectrum for BPFI (Ball Pass Frequency Inner) harmonics
+      - Check grease condition and relubrication history
+      - Verify bearing housing temperature with IR thermometer
+    runbook_refs:
+      - generic_asset_triage#bearing_vibration
+    pf_interval_hint_hours: 2000
+    maintenance_strategy: condition_based
+
+  - failure_mode_id: fm_bearing_outer_race_wear
+    component_type: bearing
+    failure_mode_name: bearing_outer_race_wear
+    failure_effect: Elevated vibration at BPFO harmonics. Outer race fixed defect pattern. Progressive degradation.
+    criticality: medium
+    detectability: medium
+    related_metrics:
+      - metric_name: vibration
+        expected_direction: increasing
+    recommended_checks:
+      - Measure vibration spectrum for BPFO harmonics
+      - Inspect bearing housing fit and alignment
+    runbook_refs:
+      - generic_asset_triage#bearing_vibration
+    pf_interval_hint_hours: 3000
+    maintenance_strategy: condition_based
+
+  - failure_mode_id: fm_motor_winding_overheat
+    component_type: motor
+    failure_mode_name: motor_winding_overheat
+    failure_effect: Insulation degradation, reduced efficiency, potential winding short circuit.
+    criticality: critical
+    detectability: high
+    related_metrics:
+      - metric_name: temperature
+        expected_direction: increasing
+        typical_threshold: "> Class F insulation limit (155C)"
+      - metric_name: power_draw
+        expected_direction: increasing
+    recommended_checks:
+      - Measure phase current balance
+      - Check cooling fan operation
+      - Inspect for blocked ventilation
+      - Megger test winding insulation
+    runbook_refs:
+      - generic_asset_triage#motor_temperature
+    pf_interval_hint_hours: 500
+    maintenance_strategy: condition_based
+
+  - failure_mode_id: fm_motor_bearing_misalignment
+    component_type: motor
+    failure_mode_name: motor_bearing_misalignment
+    failure_effect: Premature bearing wear, elevated vibration at 1x and 2x RPM. Can lead to shaft damage.
+    criticality: medium
+    detectability: high
+    related_metrics:
+      - metric_name: vibration
+        expected_direction: increasing
+    recommended_checks:
+      - Check shaft alignment with laser alignment tool
+      - Inspect base plate and foundation bolts
+      - Verify thermal growth compensation
+    runbook_refs:
+      - generic_asset_triage#motor_vibration
+    pf_interval_hint_hours: 4000
+    maintenance_strategy: predictive
+
+  - failure_mode_id: fm_gearbox_tooth_wear
+    component_type: gearbox
+    failure_mode_name: gearbox_tooth_wear
+    failure_effect: Progressive tooth surface deterioration. Increased vibration at gear mesh frequency with sidebands.
+    criticality: high
+    detectability: medium
+    related_metrics:
+      - metric_name: vibration
+        expected_direction: increasing
+      - metric_name: temperature
+        expected_direction: increasing
+    recommended_checks:
+      - Analyze vibration spectrum at gear mesh frequency (GMF) and sidebands
+      - Check oil condition, particle count, and metal debris
+      - Endoscopic inspection of gear teeth
+    runbook_refs:
+      - generic_asset_triage#gearbox_vibration
+    pf_interval_hint_hours: 3000
+    maintenance_strategy: condition_based
+
+  - failure_mode_id: fm_pump_cavitation
+    component_type: pump_impeller
+    failure_mode_name: pump_cavitation
+    failure_effect: Impeller pitting and erosion. Reduced flow, increased noise and vibration. Potential impeller failure.
+    criticality: high
+    detectability: high
+    related_metrics:
+      - metric_name: vibration
+        expected_direction: increasing
+      - metric_name: flow_rate
+        expected_direction: decreasing
+      - metric_name: pressure
+        expected_direction: any
+    recommended_checks:
+      - Check suction pressure and NPSH available vs required
+      - Inspect suction strainer for blockage
+      - Verify pump operating point is within allowable range
+    runbook_refs:
+      - generic_asset_triage#pump_cavitation
+    pf_interval_hint_hours: 100
+    maintenance_strategy: condition_based
+
+  - failure_mode_id: fm_seal_leakage
+    component_type: seal
+    failure_mode_name: seal_leakage
+    failure_effect: Process fluid leakage. Environmental/safety hazard. Pressure and flow degradation.
+    criticality: critical
+    detectability: high
+    related_metrics:
+      - metric_name: pressure
+        expected_direction: decreasing
+      - metric_name: flow_rate
+        expected_direction: decreasing
+    recommended_checks:
+      - Visual inspection for leakage
+      - Check seal flush system operation
+      - Verify seal face condition
+    runbook_refs:
+      - generic_asset_triage#seal_leak
+    pf_interval_hint_hours: 50
+    maintenance_strategy: condition_based
+
+  - failure_mode_id: fm_heat_exchanger_fouling
+    component_type: heat_exchanger_bundle
+    failure_mode_name: heat_exchanger_fouling
+    failure_effect: Reduced heat transfer efficiency. Increased pressure drop. Progressive thermal performance degradation.
+    criticality: medium
+    detectability: medium
+    related_metrics:
+      - metric_name: temperature
+        expected_direction: any
+      - metric_name: pressure
+        expected_direction: increasing
+      - metric_name: flow_rate
+        expected_direction: decreasing
+    recommended_checks:
+      - Calculate heat transfer coefficient trend
+      - Check differential pressure across exchanger
+      - Review chemical treatment logs
+    runbook_refs:
+      - generic_asset_triage#heat_exchanger_fouling
+    pf_interval_hint_hours: 8000
+    maintenance_strategy: time_based
+
+  - failure_mode_id: fm_compressor_surge
+    component_type: compressor_stage
+    failure_mode_name: compressor_surge
+    failure_effect: Flow reversal causing severe mechanical stress, high vibration, potential blade/seal damage.
+    criticality: critical
+    detectability: high
+    related_metrics:
+      - metric_name: vibration
+        expected_direction: increasing
+      - metric_name: pressure
+        expected_direction: decreasing
+      - metric_name: flow_rate
+        expected_direction: decreasing
+    recommended_checks:
+      - Verify anti-surge valve operation
+      - Check operating point relative to surge line
+      - Inspect compressor blades for damage
+    runbook_refs:
+      - generic_asset_triage#compressor_surge
+    pf_interval_hint_hours: null
+    maintenance_strategy: condition_based
+
+  - failure_mode_id: fm_turbine_blade_erosion
+    component_type: turbine_blade
+    failure_mode_name: turbine_blade_erosion
+    failure_effect: Progressive material loss from blade surfaces. Reduced efficiency, imbalance, potential blade failure.
+    criticality: critical
+    detectability: low
+    related_metrics:
+      - metric_name: vibration
+        expected_direction: increasing
+      - metric_name: power_draw
+        expected_direction: decreasing
+    recommended_checks:
+      - Borescope inspection of blade surfaces
+      - Monitor vibration spectrum for blade-pass frequency changes
+      - Check steam quality / particulate filtration
+    runbook_refs:
+      - generic_asset_triage#turbine_blade_erosion
+    pf_interval_hint_hours: 10000
+    maintenance_strategy: predictive
+
+  - failure_mode_id: fm_chiller_refrigerant_leak
+    component_type: chiller_compressor
+    failure_mode_name: chiller_refrigerant_leak
+    failure_effect: Reduced cooling capacity, increased energy consumption, potential compressor damage from low suction pressure.
+    criticality: high
+    detectability: medium
+    related_metrics:
+      - metric_name: temperature
+        expected_direction: increasing
+      - metric_name: power_draw
+        expected_direction: increasing
+    recommended_checks:
+      - Check refrigerant charge and leak detection
+      - Verify suction/discharge pressures
+      - Inspect for oil traces at joints
+    runbook_refs:
+      - generic_asset_triage#chiller_leak
+    pf_interval_hint_hours: 200
+    maintenance_strategy: condition_based
+
+  - failure_mode_id: fm_sensor_calibration_drift
+    component_type: generic_component
+    failure_mode_name: sensor_calibration_drift
+    failure_effect: Systematic measurement error. False positives/negatives in anomaly detection. Reduced APM reliability.
+    criticality: medium
+    detectability: low
+    related_metrics:
+      - metric_name: temperature
+        expected_direction: any
+      - metric_name: pressure
+        expected_direction: any
+    recommended_checks:
+      - Cross-reference with redundant or adjacent sensors
+      - Check calibration due date
+      - Verify sensor zero and span
+    runbook_refs:
+      - generic_asset_triage#sensor_drift
+    pf_interval_hint_hours: null
+    maintenance_strategy: time_based

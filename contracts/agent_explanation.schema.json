@@ -38,6 +38,21 @@
     "anomaly_id": {
       "type": "string"
     },
+    "quality_event_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Quality event IDs that affect triage confidence"
+    },
+    "failure_mode_hypothesis": {
+      "type": "string",
+      "description": "Single best-match failure mode hypothesis from FMECA"
+    },
+    "failure_mode_hypothesis_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence score for the failure mode hypothesis"
+    },
     "evidence_version": {
       "type": "string"
     },

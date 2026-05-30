@@ -421,3 +421,54 @@ CREATE TABLE IF NOT EXISTS dim_site (
 UNIQUE KEY(tenant_id, site_id)
 DISTRIBUTED BY HASH(tenant_id, site_id) BUCKETS 4
 PROPERTIES ("replication_num" = "1");
+
+-- dim_failure_mode: FMECA catalog
+-- Grain: one row per (failure_mode_id)
+CREATE TABLE IF NOT EXISTS dim_failure_mode (
+  failure_mode_id VARCHAR(128) NOT NULL,
+  asset_type VARCHAR(128),
+  component_type VARCHAR(128),
+  failure_mode_name VARCHAR(256) NOT NULL,
+  failure_effect VARCHAR(2048),
+  criticality VARCHAR(32),
+  detectability VARCHAR(32),
+  related_metrics_json VARCHAR(4096),
+  recommended_checks VARCHAR(4096),
+  runbook_refs VARCHAR(2048),
+  pf_interval_hint_hours DOUBLE,
+  maintenance_strategy VARCHAR(64),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  load_time DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+UNIQUE KEY(failure_mode_id)
+DISTRIBUTED BY HASH(failure_mode_id) BUCKETS 4
+PROPERTIES ("replication_num" = "1");
+
+-- dim_work_order: work order and inspection records
+-- Grain: one row per (work_order_id)
+CREATE TABLE IF NOT EXISTS dim_work_order (
+  work_order_id VARCHAR(256) NOT NULL,
+  tenant_id VARCHAR(128) NOT NULL,
+  asset_id VARCHAR(128),
+  component_id VARCHAR(128),
+  failure_mode_id VARCHAR(128),
+  anomaly_id VARCHAR(256),
+  incident_id VARCHAR(256),
+  work_type VARCHAR(64),
+  priority VARCHAR(32),
+  problem_code VARCHAR(128),
+  cause_code VARCHAR(128),
+  remedy_code VARCHAR(128),
+  technician_notes VARCHAR(4096),
+  downtime_minutes DOUBLE,
+  parts_json VARCHAR(4096),
+  inspection_results_json VARCHAR(4096),
+  source_system VARCHAR(64),
+  created_at DATETIME NOT NULL,
+  completed_at DATETIME,
+  status VARCHAR(64),
+  load_time DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+UNIQUE KEY(work_order_id)
+DISTRIBUTED BY HASH(tenant_id, work_order_id) BUCKETS 8
+PROPERTIES ("replication_num" = "1");

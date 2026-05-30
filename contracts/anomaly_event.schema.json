@@ -56,6 +56,9 @@
     "tag_name": {
       "type": "string"
     },
+    "component_id": {
+      "type": "string"
+    },
     "metric_name": {
       "type": "string"
     },
@@ -96,6 +99,22 @@
         "type": "string"
       },
       "uniqueItems": true
+    },
+    "quality_event_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 20,
+      "uniqueItems": true,
+      "description": "Structured quality event references for this anomaly window"
+    },
+    "fault_type": {
+      "type": "string",
+      "enum": ["asset_fault", "sensor_fault", "operating_context_change", "unknown"],
+      "description": "Distinguishes sensor faults from asset faults"
+    },
+    "failure_mode_id": {
+      "type": "string",
+      "description": "Suspected failure mode from FMECA catalog. Null = not yet correlated."
     },
     "detection_confidence": {
       "type": "number",
