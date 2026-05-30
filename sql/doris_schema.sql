@@ -303,7 +303,7 @@ CREATE TABLE IF NOT EXISTS dim_asset (
   is_current BOOLEAN DEFAULT '1',
   load_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY(asset_sk)
+DUPLICATE KEY(asset_sk, tenant_id, asset_id)
 DISTRIBUTED BY HASH(tenant_id, asset_id) BUCKETS 8
 PROPERTIES ("replication_num" = "1");
 
@@ -329,7 +329,7 @@ CREATE TABLE IF NOT EXISTS dim_component (
   is_current BOOLEAN DEFAULT '1',
   load_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY(component_sk)
+DUPLICATE KEY(component_sk, tenant_id, component_id)
 DISTRIBUTED BY HASH(tenant_id, component_id) BUCKETS 8
 PROPERTIES ("replication_num" = "1");
 
@@ -360,7 +360,7 @@ CREATE TABLE IF NOT EXISTS dim_sensor_tag (
   is_current BOOLEAN DEFAULT '1',
   load_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY(tag_sk)
+DUPLICATE KEY(tag_sk, tenant_id, tag_id)
 DISTRIBUTED BY HASH(tenant_id, tag_id) BUCKETS 8
 PROPERTIES ("replication_num" = "1");
 
@@ -403,7 +403,7 @@ CREATE TABLE IF NOT EXISTS dim_threshold_profile (
   is_current BOOLEAN DEFAULT '1',
   load_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
-DUPLICATE KEY(profile_sk)
+DUPLICATE KEY(profile_sk, profile_id, tenant_id)
 DISTRIBUTED BY HASH(profile_id, tenant_id) BUCKETS 8
 PROPERTIES ("replication_num" = "1");
 
@@ -469,6 +469,6 @@ CREATE TABLE IF NOT EXISTS dim_work_order (
   status VARCHAR(64),
   load_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
-UNIQUE KEY(work_order_id)
+UNIQUE KEY(work_order_id, tenant_id)
 DISTRIBUTED BY HASH(tenant_id, work_order_id) BUCKETS 8
 PROPERTIES ("replication_num" = "1");
