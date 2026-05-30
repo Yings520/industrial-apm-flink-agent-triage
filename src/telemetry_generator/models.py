@@ -129,6 +129,83 @@ class TagMetadata(TypedDict):
     threshold_profile_id: str
 
 
+class ComponentConfig(TypedDict):
+    component_type: str
+    expected_metrics: list[str]
+    criticality: str
+
+
+class ComponentCatalogConfig(TypedDict):
+    schema_version: str
+    description: str
+    components_per_asset_default: int
+    archetype_components: dict[str, list[ComponentConfig]]
+
+
+class AssetArchetypeComponents(TypedDict):
+    component_type: str
+    count_per_asset: int
+
+
+class UpgradedArchetypeConfig(TypedDict):
+    asset_types: list[str]
+    expected_metrics: list[str]
+    units: list[str]
+    threshold_profile_id: str
+    plausible_scenarios: list[str]
+    components: list[AssetArchetypeComponents]
+
+
+class SensorTagConfig(TypedDict):
+    schema_version: str
+    tenant_id: str
+    tag_id: str
+    tag_name: str
+    plant_id: str
+    asset_id: str
+    component_id: str
+    metric_name: str
+    unit: str
+    source_system: str
+    signal_type: str
+    sampling_rate_hz: float
+    measurement_point: str
+    normal_range_min: float
+    normal_range_max: float
+    engineering_limit_min: float
+    engineering_limit_max: float
+    calibration_status: str
+    last_calibrated_at: str
+    quality_flags: list[str]
+    valid_from: str
+    valid_to: str | None
+    is_current: bool
+
+
+class ThresholdProfileConfig(TypedDict):
+    schema_version: str
+    profile_id: str
+    tenant_id: str
+    asset_type: str
+    component_type: str | None
+    metric_name: str
+    unit: str
+    rule_id: str
+    rule_name: str
+    method: str
+    severity: str
+    parameters: dict[str, object]
+    description: str
+    version: str
+    effective_from: str
+    effective_to: str | None
+    owner: str
+    approval_status: str
+    status: str
+    created_at: str
+    created_by: str
+
+
 @dataclass(frozen=True)
 class ScenarioProfile:
     name: str
