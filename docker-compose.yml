@@ -90,7 +90,7 @@ services:
       retries: 10
 
   kafka-connect:
-    image: debezium/connect:3.0.7.Final
+    image: debezium/connect:2.7.1.Final
     depends_on:
       postgres:
         condition: service_healthy
