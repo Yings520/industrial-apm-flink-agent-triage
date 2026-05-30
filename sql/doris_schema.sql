@@ -300,7 +300,7 @@ CREATE TABLE IF NOT EXISTS dim_asset (
   expected_metrics VARCHAR(2048),
   valid_from DATETIME NOT NULL,
   valid_to DATETIME,
-  is_current BOOLEAN DEFAULT TRUE,
+  is_current BOOLEAN DEFAULT '1',
   load_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 DUPLICATE KEY(asset_sk)
@@ -326,7 +326,7 @@ CREATE TABLE IF NOT EXISTS dim_component (
   expected_metrics VARCHAR(2048),
   valid_from DATETIME NOT NULL,
   valid_to DATETIME,
-  is_current BOOLEAN DEFAULT TRUE,
+  is_current BOOLEAN DEFAULT '1',
   load_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 DUPLICATE KEY(component_sk)
@@ -357,7 +357,7 @@ CREATE TABLE IF NOT EXISTS dim_sensor_tag (
   last_calibrated_at DATETIME,
   valid_from DATETIME NOT NULL,
   valid_to DATETIME,
-  is_current BOOLEAN DEFAULT TRUE,
+  is_current BOOLEAN DEFAULT '1',
   load_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 DUPLICATE KEY(tag_sk)
@@ -400,7 +400,7 @@ CREATE TABLE IF NOT EXISTS dim_threshold_profile (
   status VARCHAR(32),
   created_at DATETIME,
   created_by VARCHAR(128),
-  is_current BOOLEAN DEFAULT TRUE,
+  is_current BOOLEAN DEFAULT '1',
   load_time DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 DUPLICATE KEY(profile_sk)
