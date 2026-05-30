@@ -36,7 +36,12 @@ def build_quality_event(
     plant_id: str | None = None,
     asset_id: str | None = None,
     tag_id: str | None = None,
+    component_id: str | None = None,
     metric_name: str | None = None,
+    quality_type: str | None = None,
+    detected_at: str | None = None,
+    resolution_status: str = "open",
+    source_event_ids: list[str] | None = None,
     observed_value: object | None = None,
     expected_value: object | None = None,
     created_at: str | None = None,
@@ -48,6 +53,9 @@ def build_quality_event(
     if check_name == "tenant_leakage" and evidence.get("tenant_id") not in (None, tenant_id):
         check_status = "fail"
         severity = "critical"
+
+    if quality_type is None:
+        quality_type = check_name
 
     quality_event_id = _stable_id(
         [
@@ -65,11 +73,16 @@ def build_quality_event(
         "tenant_id": tenant_id,
         "plant_id": plant_id,
         "asset_id": asset_id,
+        "component_id": component_id,
         "tag_id": tag_id,
         "metric_name": metric_name,
         "check_name": check_name,
+        "quality_type": quality_type,
         "check_status": check_status,
         "severity": severity,
+        "detected_at": detected_at or _now(),
+        "resolution_status": resolution_status,
+        "source_event_ids": source_event_ids or [],
         "observed_value": observed_value,
         "expected_value": expected_value,
         "window_start": window_start,

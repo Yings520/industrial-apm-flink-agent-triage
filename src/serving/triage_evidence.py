@@ -14,6 +14,8 @@ def build_triage_evidence(
     sensor_window: list[dict[str, Any]] | None = None,
     quality_events: list[dict[str, Any]] | None = None,
     stream_health: list[dict[str, Any]] | None = None,
+    failure_mode: dict[str, Any] | None = None,
+    work_order: dict[str, Any] | None = None,
     runbook_refs: list[dict[str, str]] | None = None,
     evidence_version: str = "triage_evidence.v1",
     max_source_event_ids: int = 10,
@@ -49,6 +51,11 @@ def build_triage_evidence(
         "stream_health": sorted(stream_health, key=lambda row: str(row.get("job_name", ""))),
         "sensor_window": sorted(sensor_window, key=lambda row: str(row.get("event_time", ""))),
         "source_event_ids": source_event_ids,
+        "quality_event_ids": sorted(set(
+            str(q.get("quality_event_id")) for q in quality_events if q.get("quality_event_id")
+        )),
+        "failure_mode_context": failure_mode,
+        "work_order_context": work_order,
         "runbook_refs": sorted(runbook_refs, key=lambda row: (row.get("runbook_id", ""), row.get("section", ""))),
     }
     forbidden = FORBIDDEN_EVIDENCE_FIELDS.intersection(payload)
