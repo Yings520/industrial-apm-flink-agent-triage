@@ -37,7 +37,7 @@ CREATE TABLE sensor_tags (
     source_system  VARCHAR(128) DEFAULT 'opc_ua',
     threshold_profile_id VARCHAR(128) NOT NULL,
     created_at     TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (tenant_id, tag_id_pattern)
+    PRIMARY KEY (tenant_id, tag_id_pattern, metric_name)
 );
 
 CREATE TABLE threshold_profiles (
