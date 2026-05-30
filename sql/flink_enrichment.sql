@@ -25,7 +25,7 @@ CREATE TABLE raw_sensor_events (
   'json.ignore-parse-errors' = 'true'
 );
 
-CREATE TABLE sensor_tags_lookup (
+CREATE TABLE sensor_tags_source (
   tenant_id STRING,
   tag_id_pattern STRING,
   plant_id STRING,
@@ -39,9 +39,7 @@ CREATE TABLE sensor_tags_lookup (
   'table-name' = 'sensor_tags',
   'username' = 'apm',
   'password' = 'apm_secret',
-  'lookup.cache' = 'PARTIAL',
-  'lookup.partial-cache.max-rows' = '500',
-  'lookup.partial-cache.expire-after-write' = '60min'
+  'driver' = 'org.postgresql.Driver'
 );
 
 CREATE TABLE staging_telemetry_enriched (
@@ -89,7 +87,7 @@ SELECT
   r.quality_flags,
   r.scenario
 FROM raw_sensor_events r
-LEFT JOIN sensor_tags_lookup FOR SYSTEM_TIME AS OF r.event_time AS m
+LEFT JOIN sensor_tags_source AS m
   ON r.tenant_id = m.tenant_id
   AND r.tag_id LIKE CONCAT(m.tag_id_pattern, '%')
 WHERE r.tenant_id = 'tenant_northwind';
