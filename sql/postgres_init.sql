@@ -54,7 +54,7 @@ CREATE TABLE threshold_profiles (
     version        VARCHAR(32) DEFAULT '1.0.0',
     status         VARCHAR(32) DEFAULT 'active',
     created_at     TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (tenant_id, profile_id)
+    PRIMARY KEY (tenant_id, profile_id, rule_id)
 );
 
 -- Seed data: tenant_northwind tag-to-asset mapping (matches E2E smoke test)
