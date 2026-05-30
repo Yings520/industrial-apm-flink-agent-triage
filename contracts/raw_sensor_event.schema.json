@@ -15,8 +15,7 @@
     "value",
     "unit",
     "source_system",
-    "quality_flags",
-    "scenario"
+    "quality_flags"
   ],
   "properties": {
     "event_id": {
@@ -69,7 +68,20 @@
     },
     "scenario": {
       "type": "string",
-      "enum": ["normal", "late", "missing_heartbeat", "flatline", "spike", "drift"]
+      "description": "Synthetic/demo generation metadata. Expected absent in production events.",
+      "enum": ["normal", "late", "missing_heartbeat", "flatline", "spike", "drift", "invalid_event"]
+    },
+    "synthetic_metadata": {
+      "type": "object",
+      "description": "Metadata for synthetic/generated data only. Not present in production events.",
+      "properties": {
+        "generator_version": { "type": "string" },
+        "scenario": {
+          "type": "string",
+          "enum": ["normal", "late", "missing_heartbeat", "flatline", "spike", "drift", "invalid_event"]
+        },
+        "seed_asset_index": { "type": "integer" }
+      }
     }
   }
 }

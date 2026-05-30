@@ -20,7 +20,6 @@ REQUIRED_EVENT_FIELDS = {
     "unit",
     "source_system",
     "quality_flags",
-    "scenario",
 }
 
 

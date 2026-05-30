@@ -110,7 +110,8 @@ class RawSensorEvent(TypedDict):
     unit: str
     source_system: str
     quality_flags: list[str]
-    scenario: str
+    scenario: NotRequired[str]
+    synthetic_metadata: NotRequired[dict[str, object]]
 
 
 class SensorEvent(RawSensorEvent):

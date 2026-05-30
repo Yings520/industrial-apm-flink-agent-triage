@@ -194,6 +194,11 @@ def generate_events(profile_name: str, seed: int) -> GenerationResult:
                                 source_system=source_system,
                                 quality_flags=quality_flags,
                                 scenario=scenario_name,
+                                synthetic_metadata={
+                                    "generator_version": "1.0",
+                                    "scenario": scenario_name,
+                                    "seed_asset_index": asset_index,
+                                },
                             )
                         )
                         ordinal += 1
