@@ -279,11 +279,11 @@ PROPERTIES ("replication_num" = "1");
 CREATE TABLE IF NOT EXISTS dim_asset (
   asset_sk BIGINT NOT NULL AUTO_INCREMENT,
   tenant_id VARCHAR(128) NOT NULL,
+  asset_id VARCHAR(128) NOT NULL,
   site_id VARCHAR(128),
   plant_id VARCHAR(128),
   area_id VARCHAR(128),
   line_id VARCHAR(128),
-  asset_id VARCHAR(128) NOT NULL,
   asset_name VARCHAR(256),
   asset_type VARCHAR(128),
   parent_asset_id VARCHAR(128),
@@ -312,8 +312,8 @@ PROPERTIES ("replication_num" = "1");
 CREATE TABLE IF NOT EXISTS dim_component (
   component_sk BIGINT NOT NULL AUTO_INCREMENT,
   tenant_id VARCHAR(128) NOT NULL,
-  asset_id VARCHAR(128) NOT NULL,
   component_id VARCHAR(128) NOT NULL,
+  asset_id VARCHAR(128) NOT NULL,
   component_type VARCHAR(128),
   component_name VARCHAR(256),
   functional_location VARCHAR(256),
