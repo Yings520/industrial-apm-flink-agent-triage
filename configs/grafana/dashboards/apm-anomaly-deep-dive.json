@@ -100,7 +100,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT rule_id, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id='$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY rule_id ORDER BY cnt DESC",
+          "rawSql": "SELECT rule_id, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id LIKE '$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY rule_id ORDER BY cnt DESC",
           "refId": "A"
         }
       ],
@@ -171,7 +171,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT severity, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id='$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY severity",
+          "rawSql": "SELECT severity, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id LIKE '$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY severity",
           "refId": "A"
         }
       ],
@@ -270,7 +270,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT ROUND(detection_confidence, 1) AS confidence, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id='$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY confidence ORDER BY confidence",
+          "rawSql": "SELECT ROUND(detection_confidence, 1) AS confidence, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id LIKE '$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY confidence ORDER BY confidence",
           "refId": "A"
         }
       ],
@@ -349,7 +349,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT asset_id, asset_name, COUNT(*) AS anomaly_count, MAX(severity) AS max_severity, MAX(window_end) AS last_seen FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id='$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY asset_id, asset_name ORDER BY anomaly_count DESC LIMIT 10",
+          "rawSql": "SELECT asset_id, asset_name, COUNT(*) AS anomaly_count, MAX(severity) AS max_severity, MAX(window_end) AS last_seen FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id LIKE '$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY asset_id, asset_name ORDER BY anomaly_count DESC LIMIT 10",
           "refId": "A"
         }
       ],
@@ -439,7 +439,7 @@
             "uid": "apm-doris"
           },
           "format": "time_series",
-          "rawSql": "SELECT DATE_FORMAT(window_start, '%Y-%m-%dT%H:00:00Z') AS time, severity, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id='$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY time, severity ORDER BY time",
+          "rawSql": "SELECT DATE_FORMAT(window_start, '%Y-%m-%dT%H:00:00Z') AS time, severity, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id LIKE '$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY time, severity ORDER BY time",
           "refId": "A"
         }
       ],
@@ -459,7 +459,7 @@
         "current": {
           "selected": true,
           "text": "All",
-          "value": "$__all"
+          "value": "%"
         },
         "datasource": {
           "type": "mysql",
@@ -468,7 +468,8 @@
         "definition": "SELECT DISTINCT tenant_id FROM industrial_apm.dwd_apm_sensor_readings_rt",
         "hide": 0,
         "includeAll": true,
-        "multi": true,
+        "multi": false,
+        "allValue": "%",
         "name": "tenant_id",
         "options": [],
         "query": "SELECT DISTINCT tenant_id FROM industrial_apm.dwd_apm_sensor_readings_rt",

@@ -100,7 +100,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT incident_id, asset_id, metric_name, max_severity, anomaly_count, first_seen_at, last_seen_at, status FROM industrial_apm.fact_apm_incidents WHERE tenant_id='$tenant_id' AND status='open' ORDER BY max_severity DESC, last_seen_at DESC",
+          "rawSql": "SELECT incident_id, asset_id, metric_name, max_severity, anomaly_count, first_seen_at, last_seen_at, status FROM industrial_apm.fact_apm_incidents WHERE tenant_id LIKE '$tenant_id' AND status='open' ORDER BY max_severity DESC, last_seen_at DESC",
           "refId": "A"
         }
       ],
@@ -163,7 +163,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_agent_recommendations WHERE tenant_id='$tenant_id' AND status='llm_generated' AND created_at >= NOW() - INTERVAL 1 DAY",
+          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_agent_recommendations WHERE tenant_id LIKE '$tenant_id' AND status='llm_generated' AND created_at >= NOW() - INTERVAL 1 DAY",
           "refId": "A"
         }
       ],
@@ -226,7 +226,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_agent_recommendations WHERE tenant_id='$tenant_id' AND status='fallback' AND created_at >= NOW() - INTERVAL 1 DAY",
+          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_agent_recommendations WHERE tenant_id LIKE '$tenant_id' AND status='fallback' AND created_at >= NOW() - INTERVAL 1 DAY",
           "refId": "A"
         }
       ],
@@ -289,7 +289,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT AVG(explanation_usefulness) FROM industrial_apm.fact_apm_operator_feedback WHERE tenant_id='$tenant_id'",
+          "rawSql": "SELECT AVG(explanation_usefulness) FROM industrial_apm.fact_apm_operator_feedback WHERE tenant_id LIKE '$tenant_id'",
           "refId": "A"
         }
       ],
@@ -360,7 +360,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT confidence_label, COUNT(*) AS cnt FROM industrial_apm.fact_apm_agent_recommendations WHERE tenant_id='$tenant_id' AND created_at >= NOW() - INTERVAL 1 DAY GROUP BY confidence_label",
+          "rawSql": "SELECT confidence_label, COUNT(*) AS cnt FROM industrial_apm.fact_apm_agent_recommendations WHERE tenant_id LIKE '$tenant_id' AND created_at >= NOW() - INTERVAL 1 DAY GROUP BY confidence_label",
           "refId": "A"
         }
       ],
@@ -454,7 +454,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT recommendation_id, anomaly_id, summary, confidence_label, status, created_at FROM industrial_apm.fact_apm_agent_recommendations WHERE tenant_id='$tenant_id' ORDER BY created_at DESC LIMIT 20",
+          "rawSql": "SELECT recommendation_id, anomaly_id, summary, confidence_label, status, created_at FROM industrial_apm.fact_apm_agent_recommendations WHERE tenant_id LIKE '$tenant_id' ORDER BY created_at DESC LIMIT 20",
           "refId": "A"
         }
       ],
@@ -548,7 +548,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT feedback_id, operator_id, is_true_positive, severity_correction, explanation_usefulness, resolution_note, created_at FROM industrial_apm.fact_apm_operator_feedback WHERE tenant_id='$tenant_id' ORDER BY created_at DESC LIMIT 10",
+          "rawSql": "SELECT feedback_id, operator_id, is_true_positive, severity_correction, explanation_usefulness, resolution_note, created_at FROM industrial_apm.fact_apm_operator_feedback WHERE tenant_id LIKE '$tenant_id' ORDER BY created_at DESC LIMIT 10",
           "refId": "A"
         }
       ],
@@ -569,7 +569,7 @@
         "current": {
           "selected": true,
           "text": "All",
-          "value": "$__all"
+          "value": "%"
         },
         "datasource": {
           "type": "mysql",
@@ -578,7 +578,8 @@
         "definition": "SELECT DISTINCT tenant_id FROM industrial_apm.dwd_apm_sensor_readings_rt",
         "hide": 0,
         "includeAll": true,
-        "multi": true,
+        "multi": false,
+        "allValue": "%",
         "name": "tenant_id",
         "options": [],
         "query": "SELECT DISTINCT tenant_id FROM industrial_apm.dwd_apm_sensor_readings_rt",

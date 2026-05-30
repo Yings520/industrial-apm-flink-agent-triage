@@ -64,7 +64,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT COUNT(DISTINCT asset_id) FROM industrial_apm.dwd_apm_sensor_readings_rt WHERE tenant_id='$tenant_id'",
+          "rawSql": "SELECT COUNT(DISTINCT asset_id) FROM industrial_apm.dwd_apm_sensor_readings_rt WHERE tenant_id LIKE '$tenant_id'",
           "refId": "A"
         }
       ],
@@ -127,7 +127,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT COUNT(DISTINCT asset_id) FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id='$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY",
+          "rawSql": "SELECT COUNT(DISTINCT asset_id) FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id LIKE '$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY",
           "refId": "A"
         }
       ],
@@ -226,7 +226,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT a.tenant_id, a.asset_id, MAX(a.asset_name) AS asset_name, COUNT(DISTINCT an.anomaly_id) AS anomaly_count, SUM(CASE WHEN an.severity='critical' THEN 1 ELSE 0 END) AS critical_count, MAX(an.window_end) AS last_anomaly FROM industrial_apm.dwd_apm_sensor_readings_rt a LEFT JOIN industrial_apm.fact_apm_anomaly_events an ON a.tenant_id=an.tenant_id AND a.asset_id=an.asset_id AND an.window_start >= NOW() - INTERVAL 1 DAY WHERE a.tenant_id='$tenant_id' AND a.event_time >= NOW() - INTERVAL 1 HOUR GROUP BY a.tenant_id, a.asset_id ORDER BY critical_count DESC, anomaly_count DESC",
+          "rawSql": "SELECT a.tenant_id, a.asset_id, MAX(a.asset_name) AS asset_name, COUNT(DISTINCT an.anomaly_id) AS anomaly_count, SUM(CASE WHEN an.severity='critical' THEN 1 ELSE 0 END) AS critical_count, MAX(an.window_end) AS last_anomaly FROM industrial_apm.dwd_apm_sensor_readings_rt a LEFT JOIN industrial_apm.fact_apm_anomaly_events an ON a.tenant_id=an.tenant_id AND a.asset_id=an.asset_id AND an.window_start >= NOW() - INTERVAL 1 DAY WHERE a.tenant_id LIKE '$tenant_id' AND a.event_time >= NOW() - INTERVAL 1 HOUR GROUP BY a.tenant_id, a.asset_id ORDER BY critical_count DESC, anomaly_count DESC",
           "refId": "A"
         }
       ],
@@ -316,7 +316,7 @@
             "uid": "apm-doris"
           },
           "format": "time_series",
-          "rawSql": "SELECT DATE_FORMAT(event_time, '%Y-%m-%dT%H:%i:00Z') AS time, asset_name, AVG(value) AS avg_value FROM industrial_apm.dwd_apm_sensor_readings_rt WHERE tenant_id='$tenant_id' AND metric_name='temperature' AND event_time >= NOW() - INTERVAL 1 HOUR GROUP BY time, asset_name ORDER BY time LIMIT 1000",
+          "rawSql": "SELECT DATE_FORMAT(event_time, '%Y-%m-%dT%H:%i:00Z') AS time, asset_name, AVG(value) AS avg_value FROM industrial_apm.dwd_apm_sensor_readings_rt WHERE tenant_id LIKE '$tenant_id' AND metric_name='temperature' AND event_time >= NOW() - INTERVAL 1 HOUR GROUP BY time, asset_name ORDER BY time LIMIT 1000",
           "refId": "A"
         }
       ],
@@ -395,7 +395,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT event_id, asset_id, tag_id, metric_name, value, unit, event_time, quality_flags FROM industrial_apm.dwd_apm_sensor_readings_rt WHERE tenant_id='$tenant_id' ORDER BY event_time DESC LIMIT 30",
+          "rawSql": "SELECT event_id, asset_id, tag_id, metric_name, value, unit, event_time, quality_flags FROM industrial_apm.dwd_apm_sensor_readings_rt WHERE tenant_id LIKE '$tenant_id' ORDER BY event_time DESC LIMIT 30",
           "refId": "A"
         }
       ],
@@ -489,7 +489,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT tenant_id, job_name, MAX(observed_at) AS latest, MAX(watermark_lag_seconds) AS lag, SUM(late_event_count) AS late_events, MAX(checkpoint_status) AS checkpoint FROM industrial_apm.fact_apm_stream_health_snapshots WHERE tenant_id='$tenant_id' GROUP BY tenant_id, job_name",
+          "rawSql": "SELECT tenant_id, job_name, MAX(observed_at) AS latest, MAX(watermark_lag_seconds) AS lag, SUM(late_event_count) AS late_events, MAX(checkpoint_status) AS checkpoint FROM industrial_apm.fact_apm_stream_health_snapshots WHERE tenant_id LIKE '$tenant_id' GROUP BY tenant_id, job_name",
           "refId": "A"
         }
       ],
@@ -509,7 +509,7 @@
         "current": {
           "selected": true,
           "text": "All",
-          "value": "$__all"
+          "value": "%"
         },
         "datasource": {
           "type": "mysql",
@@ -518,7 +518,8 @@
         "definition": "SELECT DISTINCT tenant_id FROM industrial_apm.dwd_apm_sensor_readings_rt",
         "hide": 0,
         "includeAll": true,
-        "multi": true,
+        "multi": false,
+        "allValue": "%",
         "name": "tenant_id",
         "options": [],
         "query": "SELECT DISTINCT tenant_id FROM industrial_apm.dwd_apm_sensor_readings_rt",

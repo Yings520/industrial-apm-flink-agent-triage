@@ -64,7 +64,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_incidents WHERE tenant_id='$tenant_id' AND max_severity='critical' AND status='open'",
+          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_incidents WHERE tenant_id LIKE '$tenant_id' AND max_severity='critical' AND status='open'",
           "refId": "A"
         }
       ],
@@ -127,7 +127,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_incidents WHERE tenant_id='$tenant_id' AND max_severity='warning' AND status='open'",
+          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_incidents WHERE tenant_id LIKE '$tenant_id' AND max_severity='warning' AND status='open'",
           "refId": "A"
         }
       ],
@@ -190,7 +190,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id='$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY",
+          "rawSql": "SELECT COUNT(*) FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id LIKE '$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY",
           "refId": "A"
         }
       ],
@@ -280,7 +280,7 @@
             "uid": "apm-doris"
           },
           "format": "time_series",
-          "rawSql": "SELECT DATE_FORMAT(event_time, '%Y-%m-%dT%H:%i:00Z') AS time, COUNT(*) AS cnt FROM industrial_apm.dwd_apm_sensor_readings_rt WHERE tenant_id='$tenant_id' AND event_time >= NOW() - INTERVAL 1 HOUR GROUP BY time ORDER BY time",
+          "rawSql": "SELECT DATE_FORMAT(event_time, '%Y-%m-%dT%H:%i:00Z') AS time, COUNT(*) AS cnt FROM industrial_apm.dwd_apm_sensor_readings_rt WHERE tenant_id LIKE '$tenant_id' AND event_time >= NOW() - INTERVAL 1 HOUR GROUP BY time ORDER BY time",
           "refId": "A"
         }
       ],
@@ -370,7 +370,7 @@
             "uid": "apm-doris"
           },
           "format": "time_series",
-          "rawSql": "SELECT DATE_FORMAT(window_start, '%Y-%m-%dT%H:%i:00Z') AS time, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id='$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY time ORDER BY time",
+          "rawSql": "SELECT DATE_FORMAT(window_start, '%Y-%m-%dT%H:%i:00Z') AS time, COUNT(*) AS cnt FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id LIKE '$tenant_id' AND window_start >= NOW() - INTERVAL 1 DAY GROUP BY time ORDER BY time",
           "refId": "A"
         }
       ],
@@ -442,7 +442,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT watermark_lag_seconds FROM industrial_apm.fact_apm_stream_health_snapshots WHERE tenant_id='$tenant_id' ORDER BY observed_at DESC LIMIT 1",
+          "rawSql": "SELECT watermark_lag_seconds FROM industrial_apm.fact_apm_stream_health_snapshots WHERE tenant_id LIKE '$tenant_id' ORDER BY observed_at DESC LIMIT 1",
           "refId": "A"
         }
       ],
@@ -530,7 +530,7 @@
             "uid": "apm-doris"
           },
           "format": "table",
-          "rawSql": "SELECT anomaly_id, asset_id, asset_name, tag_id, metric_name, severity, observed_value, baseline_value, window_start FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id='$tenant_id' ORDER BY window_start DESC LIMIT 20",
+          "rawSql": "SELECT anomaly_id, asset_id, asset_name, tag_id, metric_name, severity, observed_value, baseline_value, window_start FROM industrial_apm.fact_apm_anomaly_events WHERE tenant_id LIKE '$tenant_id' ORDER BY window_start DESC LIMIT 20",
           "refId": "A"
         }
       ],
@@ -550,7 +550,7 @@
         "current": {
           "selected": true,
           "text": "All",
-          "value": "$__all"
+          "value": "%"
         },
         "datasource": {
           "type": "mysql",
@@ -559,7 +559,8 @@
         "definition": "SELECT DISTINCT tenant_id FROM industrial_apm.dwd_apm_sensor_readings_rt",
         "hide": 0,
         "includeAll": true,
-        "multi": true,
+        "multi": false,
+        "allValue": "%",
         "name": "tenant_id",
         "options": [],
         "query": "SELECT DISTINCT tenant_id FROM industrial_apm.dwd_apm_sensor_readings_rt",
