@@ -1,4 +1,4 @@
-.PHONY: setup generate-demo-data validate-schemas stream-start stream-health stream-stop stream-logs stream-create-topics stream-publish-raw flink-run-enrichment flink-run-anomalies stream-verify-replay stream-read-staging serving-start serving-health serving-stop serving-init serving-load-jobs serving-query phase3-reset phase3-load-triage phase3-report phase3-e2e test
+.PHONY: setup generate-demo-data validate-schemas stream-start stream-health stream-stop stream-logs stream-create-topics stream-publish-raw flink-run-enrichment flink-run-anomalies stream-verify-replay stream-read-staging serving-start serving-health serving-stop serving-init serving-load-jobs serving-query phase3-reset phase3-load-triage phase3-report phase3-e2e phase4-load-incidents phase4-e2e test
 
 PYTHON ?= ./.venv/bin/python
 OUTPUT_DIR ?= data
@@ -54,11 +54,13 @@ serving-start:
 	mkdir -p flink/lib reports
 	docker compose up -d redpanda redpanda-console flink-jobmanager flink-taskmanager
 	docker compose up -d --force-recreate doris
+	docker compose up -d postgres
 
 serving-health:
 	docker compose ps
 	./scripts/doris-sql.sh -e "SHOW FRONTENDS; SHOW BACKENDS;"
 	./scripts/doris-sql.sh -N -B -e "SHOW BACKENDS;" | awk -F '\t' '{ if ($$10 == "true") found = 1 } END { exit !found }'
+	@echo "PostgreSQL: $$(docker compose exec -T postgres pg_isready -U apm -d apm_metadata 2>/dev/null || echo 'not ready')"
 
 serving-stop:
 	docker compose down
@@ -88,6 +90,12 @@ phase3-report:
 
 phase3-e2e:
 	./scripts/phase3-e2e.sh
+
+phase4-load-incidents:
+	$(PYTHON) scripts/phase4-load-incidents.py
+
+phase4-e2e:
+	./scripts/phase4-e2e.sh
 
 test:
 	$(PYTHON) -m pytest
