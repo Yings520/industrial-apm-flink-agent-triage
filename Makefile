@@ -56,6 +56,7 @@ serving-start:
 	docker compose up -d postgres
 	docker compose up -d --force-recreate doris
 	docker compose up -d kafka-connect
+	docker compose up -d grafana
 
 serving-health:
 	docker compose ps

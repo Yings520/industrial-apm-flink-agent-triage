@@ -115,6 +115,29 @@ services:
       timeout: 10s
       retries: 20
 
+  grafana:
+    image: grafana/grafana:10.4.13
+    depends_on:
+      doris:
+        condition: service_healthy
+    ports:
+      - "13000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=apm_demo
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Editor
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - ./configs/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./configs/grafana/dashboards:/etc/grafana/dashboards:ro
+      - ./configs/grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/default.yml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health | grep -q ok"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
   doris:
     image: apache/doris:3.0.5-all
     entrypoint: ["bash", "-lc", "bash entry_point.sh && tail -f /dev/null"]
