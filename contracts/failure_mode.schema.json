@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/failure_mode.schema.json",
+  "title": "failure_mode",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "failure_mode_id",
+    "asset_type",
+    "component_type",
+    "failure_mode_name",
+    "failure_effect",
+    "criticality",
+    "detectability",
+    "related_metrics",
+    "recommended_checks",
+    "maintenance_strategy"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "failure_mode.v1"
+    },
+    "failure_mode_id": {
+      "type": "string"
+    },
+    "asset_type": {
+      "type": "string"
+    },
+    "component_type": {
+      "type": "string"
+    },
+    "failure_mode_name": {
+      "type": "string",
+      "description": "Short descriptive name (e.g. 'bearing_inner_race_wear')"
+    },
+    "failure_effect": {
+      "type": "string",
+      "description": "Local and system-level effect of failure"
+    },
+    "criticality": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "detectability": {
+      "type": "string",
+      "enum": ["high", "medium", "low", "undetectable"]
+    },
+    "related_metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["metric_name", "expected_direction"],
+        "properties": {
+          "metric_name": { "type": "string" },
+          "expected_direction": {
+            "type": "string",
+            "enum": ["increasing", "decreasing", "any"]
+          },
+          "typical_threshold": { "type": "string" },
+          "sensitivity_notes": { "type": "string" }
+        }
+      }
+    },
+    "recommended_checks": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "runbook_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "pf_interval_hint_hours": {
+      "type": "number",
+      "description": "Approximate P-F interval for this failure mode in hours. Null = unknown."
+    },
+    "maintenance_strategy": {
+      "type": "string",
+      "enum": [
+        "run_to_failure", "time_based", "condition_based",
+        "predictive", "proactive", "design_out"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
