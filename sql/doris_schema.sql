@@ -277,7 +277,7 @@ PROPERTIES ("replication_num" = "1");
 -- dim_asset: one row per asset version (SCD Type 2)
 -- Grain: one row per (tenant_id, asset_id, valid_from)
 CREATE TABLE IF NOT EXISTS dim_asset (
-  asset_sk BIGINT AUTO_INCREMENT,
+  asset_sk BIGINT AUTO_INCREMENT NOT NULL,
   tenant_id VARCHAR(128) NOT NULL,
   site_id VARCHAR(128),
   plant_id VARCHAR(128),
@@ -310,7 +310,7 @@ PROPERTIES ("replication_num" = "1");
 -- dim_component: one row per component version (SCD Type 2)
 -- Grain: one row per (tenant_id, component_id, valid_from)
 CREATE TABLE IF NOT EXISTS dim_component (
-  component_sk BIGINT AUTO_INCREMENT,
+  component_sk BIGINT AUTO_INCREMENT NOT NULL,
   tenant_id VARCHAR(128) NOT NULL,
   asset_id VARCHAR(128) NOT NULL,
   component_id VARCHAR(128) NOT NULL,
@@ -336,7 +336,7 @@ PROPERTIES ("replication_num" = "1");
 -- dim_sensor_tag: one row per tag version (SCD Type 2)
 -- Grain: one row per (tenant_id, tag_id, valid_from)
 CREATE TABLE IF NOT EXISTS dim_sensor_tag (
-  tag_sk BIGINT AUTO_INCREMENT,
+  tag_sk BIGINT AUTO_INCREMENT NOT NULL,
   tenant_id VARCHAR(128) NOT NULL,
   tag_id VARCHAR(256) NOT NULL,
   tag_name VARCHAR(256),
@@ -379,7 +379,7 @@ PROPERTIES ("replication_num" = "1");
 -- dim_threshold_profile: one row per rule version (SCD Type 2)
 -- Grain: one row per (profile_id, version, effective_from)
 CREATE TABLE IF NOT EXISTS dim_threshold_profile (
-  profile_sk BIGINT AUTO_INCREMENT,
+  profile_sk BIGINT AUTO_INCREMENT NOT NULL,
   profile_id VARCHAR(128) NOT NULL,
   tenant_id VARCHAR(128),
   asset_type VARCHAR(128),
