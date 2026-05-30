@@ -67,6 +67,14 @@ services:
 
   postgres:
     image: postgres:16-alpine
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=1
+      - -c
+      - max_wal_senders=1
     environment:
       - POSTGRES_DB=apm_metadata
       - POSTGRES_USER=apm
@@ -80,6 +88,32 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  kafka-connect:
+    image: debezium/connect:3.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    ports:
+      - "18083:8083"
+    environment:
+      - BOOTSTRAP_SERVERS=redpanda:19092
+      - GROUP_ID=debezium-connect
+      - CONFIG_STORAGE_TOPIC=debezium_connect_configs
+      - OFFSET_STORAGE_TOPIC=debezium_connect_offsets
+      - STATUS_STORAGE_TOPIC=debezium_connect_statuses
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE=false
+      - CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE=false
+      - CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/ >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
 
   doris:
     image: apache/doris:3.0.5-all

@@ -53,14 +53,38 @@ stream-read-staging:
 serving-start:
 	mkdir -p flink/lib reports
 	docker compose up -d redpanda redpanda-console flink-jobmanager flink-taskmanager
-	docker compose up -d --force-recreate doris
 	docker compose up -d postgres
+	docker compose up -d --force-recreate doris
+	docker compose up -d kafka-connect
 
 serving-health:
 	docker compose ps
 	./scripts/doris-sql.sh -e "SHOW FRONTENDS; SHOW BACKENDS;"
 	./scripts/doris-sql.sh -N -B -e "SHOW BACKENDS;" | awk -F '\t' '{ if ($$10 == "true") found = 1 } END { exit !found }'
+	@echo "Kafka Connect: $$(curl -s http://localhost:18083/ | head -c 50 2>/dev/null || echo 'not ready')"
 	@echo "PostgreSQL: $$(docker compose exec -T postgres pg_isready -U apm -d apm_metadata 2>/dev/null || echo 'not ready')"
+
+debezium-register:
+	@echo "Waiting for Kafka Connect..."
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		curl -s -o /dev/null http://localhost:18083/ && break; \
+		echo "  attempt $$i/10..."; sleep 10; \
+	done
+	@echo "Deleting old connector if exists..."
+	curl -s -X DELETE http://localhost:18083/connectors/pg-sensor-tags-connector || true
+	sleep 2
+	@echo "Registering Debezium PostgreSQL connector..."
+	curl -s -X POST -H "Content-Type: application/json" \
+		-d @configs/debezium-pg-sensor-tags.json \
+		http://localhost:18083/connectors
+	@echo ""
+	@echo "Waiting for CDC snapshot..."
+	@for i in 1 2 3 4 5 6; do \
+		state=$$(curl -s http://localhost:18083/connectors/pg-sensor-tags-connector/status | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('connector',{}).get('state','UNKNOWN'))" 2>/dev/null); \
+		[ "$$state" = "RUNNING" ] && break; \
+		echo "  connector state: $$state, attempt $$i/6..."; sleep 5; \
+	done
+	@echo "CDC connector ready."
 
 serving-stop:
 	docker compose down

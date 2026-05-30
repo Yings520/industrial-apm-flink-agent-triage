@@ -25,21 +25,24 @@ CREATE TABLE raw_sensor_events (
   'json.ignore-parse-errors' = 'true'
 );
 
-CREATE TABLE sensor_tags_source (
+CREATE TABLE sensor_tags_cdc (
   tenant_id STRING,
   tag_id_pattern STRING,
   plant_id STRING,
   asset_id STRING,
   asset_name STRING,
   metric_name STRING,
-  threshold_profile_id STRING
+  threshold_profile_id STRING,
+  __deleted STRING
 ) WITH (
-  'connector' = 'jdbc',
-  'url' = 'jdbc:postgresql://postgres:5432/apm_metadata',
-  'table-name' = 'sensor_tags',
-  'username' = 'apm',
-  'password' = 'apm_secret',
-  'driver' = 'org.postgresql.Driver'
+  'connector' = 'kafka',
+  'topic' = 'pg_apm.public.sensor_tags',
+  'properties.bootstrap.servers' = 'redpanda:19092',
+  'properties.group.id' = 'phase02-flink-enrichment-cdc',
+  'scan.startup.mode' = 'earliest-offset',
+  'scan.bounded.mode' = 'latest-offset',
+  'format' = 'json',
+  'json.ignore-parse-errors' = 'true'
 );
 
 CREATE TABLE staging_telemetry_enriched (
@@ -87,7 +90,8 @@ SELECT
   r.quality_flags,
   r.scenario
 FROM raw_sensor_events r
-LEFT JOIN sensor_tags_source AS m
+LEFT JOIN sensor_tags_cdc AS m
   ON r.tenant_id = m.tenant_id
   AND r.tag_id LIKE CONCAT(m.tag_id_pattern, '%')
+  AND (m.__deleted IS NULL OR m.__deleted = 'false')
 WHERE r.tenant_id = 'tenant_northwind';

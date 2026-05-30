@@ -21,6 +21,7 @@ done
 make serving-init
 make phase3-reset
 make stream-create-topics
+make debezium-register
 make stream-publish-raw PROFILE=smoke
 make flink-run-enrichment
 make flink-run-anomalies
