@@ -25,5 +25,5 @@ fi
 
 docker compose exec -T flink-jobmanager \
   /opt/flink/bin/sql-client.sh \
-  -j "/opt/flink/usrlib/${connector_name}" \
+  -l /opt/flink/usrlib \
   -f "/opt/flink/sql/$(basename "$sql_file")"
