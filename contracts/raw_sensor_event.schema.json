@@ -53,7 +53,7 @@
     },
     "unit": {
       "type": "string",
-      "enum": ["celsius", "mm_s", "bar", "m3_h", "kw"]
+      "enum": ["celsius", "mm_s", "bar", "m3_h", "kw", "ampere", "rpm", "db"]
     },
     "source_system": {
       "type": "string",
@@ -69,16 +69,53 @@
     "scenario": {
       "type": "string",
       "description": "Synthetic/demo generation metadata. Expected absent in production events.",
-      "enum": ["normal", "late", "missing_heartbeat", "flatline", "spike", "drift", "invalid_event"]
+      "enum": [
+        "normal",
+        "late",
+        "missing_heartbeat",
+        "flatline",
+        "spike",
+        "drift",
+        "startup",
+        "steady_load",
+        "high_load",
+        "idle",
+        "warning",
+        "critical",
+        "degradation",
+        "failure",
+        "maintenance",
+        "shutdown",
+        "invalid_event"
+      ]
     },
     "synthetic_metadata": {
       "type": "object",
       "description": "Metadata for synthetic/generated data only. Not present in production events.",
+      "additionalProperties": true,
       "properties": {
         "generator_version": { "type": "string" },
         "scenario": {
           "type": "string",
-          "enum": ["normal", "late", "missing_heartbeat", "flatline", "spike", "drift", "invalid_event"]
+          "enum": [
+            "normal",
+            "late",
+            "missing_heartbeat",
+            "flatline",
+            "spike",
+            "drift",
+            "startup",
+            "steady_load",
+            "high_load",
+            "idle",
+            "warning",
+            "critical",
+            "degradation",
+            "failure",
+            "maintenance",
+            "shutdown",
+            "invalid_event"
+          ]
         },
         "seed_asset_index": { "type": "integer" }
       }

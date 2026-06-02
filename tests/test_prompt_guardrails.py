@@ -50,3 +50,69 @@ def test_autonomous_claim_is_quarantined() -> None:
     result = validate_recommendation(rec, evidence)
     assert not result.valid
     assert "banned_autonomous_claim" in (result.quarantine_reason or "")
+
+
+def test_unsupported_runbook_ref_is_quarantined() -> None:
+    evidence = _evidence()
+    rec = generate_fallback_recommendation(evidence)
+    rec["runbook_references"] = ["unsupported_runbook#section"]
+    result = validate_recommendation(rec, evidence)
+    assert not result.valid
+    assert "unsupported_runbook_ref" in (result.quarantine_reason or "")
+
+
+def test_missing_schema_version_is_quarantined() -> None:
+    evidence = _evidence()
+    rec = generate_fallback_recommendation(evidence)
+    del rec["schema_version"]
+    result = validate_recommendation(rec, evidence)
+    assert not result.valid
+
+
+def test_schema_invalid_confidence_label_is_quarantined() -> None:
+    evidence = _evidence()
+    rec = generate_fallback_recommendation(evidence)
+    rec["confidence_label"] = "extreme"
+    result = validate_recommendation(rec, evidence)
+    assert not result.valid
+
+
+def test_autonomous_diagnosis_wording_is_quarantined() -> None:
+    evidence = _evidence()
+    rec = generate_fallback_recommendation(evidence)
+    rec["findings"] = ["This is an autonomous diagnosis of bearing failure."]
+    result = validate_recommendation(rec, evidence)
+    assert not result.valid
+    assert "banned_autonomous_claim" in (result.quarantine_reason or "")
+
+
+def test_definitive_root_cause_wording_is_quarantined() -> None:
+    evidence = _evidence()
+    rec = generate_fallback_recommendation(evidence)
+    rec["recommended_checks"] = ["Definitive root cause: pump cavitation."]
+    result = validate_recommendation(rec, evidence)
+    assert not result.valid
+    assert "banned_autonomous_claim" in (result.quarantine_reason or "")
+
+
+def test_automatic_remediation_wording_is_quarantined() -> None:
+    evidence = _evidence()
+    rec = generate_fallback_recommendation(evidence)
+    rec["summary"] = "Alert resolved by automatic remediation."
+    result = validate_recommendation(rec, evidence)
+    assert not result.valid
+    assert "banned_autonomous_claim" in (result.quarantine_reason or "")
+
+
+def test_non_json_provider_output_is_handled() -> None:
+    from src.triage_service.openai_provider import generate_llm_recommendation
+
+    def fake_transport(*, url: str, headers: dict[str, str], body: bytes, timeout: int) -> tuple[int, bytes]:
+        import json as _json
+        return 200, _json.dumps({"choices": [{"message": {"content": "not json"}}], "usage": {"prompt_tokens": 1, "completion_tokens": 1}}).encode()
+
+    env = {"OPENAI_API_KEY": "sk-test", "OPENAI_MODEL": "gpt-4o-mini"}
+    result = generate_llm_recommendation(_evidence(), env=env, transport=fake_transport)
+    assert result["parsed_status"] == "non_json"
+    assert result["recommendation"] is None
+

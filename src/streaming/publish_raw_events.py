@@ -4,6 +4,8 @@ import argparse
 import json
 import subprocess
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from enum import StrEnum
 from pathlib import Path
 from typing import cast
 
@@ -25,11 +27,17 @@ class PublishRoute:
     fallback_path: Path | None = None
 
 
+class ProducerMode(StrEnum):
+    BACKFILL_REPLAY = "backfill_replay"
+    REALTIME_LIVE = "realtime_live"
+
+
 class PublishNamespace(argparse.Namespace):
     input: Path | None = None
     broker: str = "localhost:19092"
     tenant: str | None = None
     profile: str = "demo"
+    mode: str = "backfill_replay"
     dry_run: bool = False
     output_dir: Path = Path("data")
 
@@ -60,7 +68,33 @@ def _schema_version(schema: dict[str, object]) -> str:
     return version
 
 
-def plan_routes(records: list[dict[str, object]], output_dir: Path = Path("data")) -> list[PublishRoute]:
+def _now_iso() -> str:
+    return datetime.now(tz=UTC).isoformat().replace("+00:00", "Z")
+
+
+def apply_producer_mode(
+    record: dict[str, object],
+    mode: ProducerMode,
+    *,
+    now_iso: str | None = None,
+) -> dict[str, object]:
+    timestamp = now_iso or _now_iso()
+    updated = dict(record)
+    metadata_raw = updated.get("synthetic_metadata", {})
+    metadata = dict(metadata_raw) if isinstance(metadata_raw, dict) else {}
+    metadata["producer_mode"] = mode.value
+    if mode == ProducerMode.BACKFILL_REPLAY:
+        updated["ingest_time"] = timestamp
+    else:
+        updated["event_time"] = timestamp
+        updated["ingest_time"] = timestamp
+    updated["synthetic_metadata"] = metadata
+    return updated
+
+
+def plan_routes(records: list[dict[str, object]], output_dir: Path | None = None) -> list[PublishRoute]:
+    if output_dir is None:
+        output_dir = Path("data")
     schema = _load_schema()
     schema_version = _schema_version(schema)
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
@@ -69,7 +103,7 @@ def plan_routes(records: list[dict[str, object]], output_dir: Path = Path("data"
     known_tenants = set(tenant_ids())
 
     for record in records:
-        errors = sorted(validator.iter_errors(record), key=lambda error: list(error.absolute_path))
+        errors = sorted(validator.iter_errors(cast(object, record)), key=lambda error: list(error.absolute_path))  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
         tenant_id = record.get("tenant_id")
         if not errors:
             key = raw_message_key(record)
@@ -103,7 +137,9 @@ def plan_routes(records: list[dict[str, object]], output_dir: Path = Path("data"
                 )
             )
         else:
-            routes.append(PublishRoute(topic=None, key=None, record=dlq_record, valid=False, fallback_path=fallback_path))
+            routes.append(
+                PublishRoute(topic=None, key=None, record=dlq_record, valid=False, fallback_path=fallback_path)
+            )
     return routes
 
 
@@ -114,40 +150,57 @@ def _append_fallback(path: Path, record: dict[str, object]) -> None:
         _ = handle.write("\n")
 
 
-def _produce(topic: str, key: str, record: dict[str, object], broker: str) -> None:
-    command = [
-        "docker",
-        "compose",
-        "exec",
-        "-T",
-        "redpanda",
-        "rpk",
-        "-X",
-        f"brokers={broker}",
-        "topic",
-        "produce",
-        topic,
-        "-k",
-        key,
-    ]
-    payload = json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n"
-    _ = subprocess.run(command, input=payload, text=True, check=True)
+def _build_producer(broker: str):  # pyright: ignore[reportUnusedFunction]
+    from kafka import KafkaProducer  # pyright: ignore[reportMissingTypeStubs]
+
+    return KafkaProducer(
+        bootstrap_servers=broker,
+        batch_size=16384,
+        linger_ms=10,
+        compression_type="gzip",
+        value_serializer=lambda v: json.dumps(v, sort_keys=True, separators=(",", ":")).encode("utf-8"),
+        key_serializer=lambda k: k.encode("utf-8") if k else None,
+    )
 
 
-def publish_routes(routes: list[PublishRoute], broker: str, dry_run: bool) -> None:
+def publish_routes(routes: list[PublishRoute], _broker: str, dry_run: bool) -> None:
+    if dry_run:
+        for route in routes:
+            if route.topic is None:
+                print(f"fallback {route.fallback_path}")
+            else:
+                print(f"produce topic={route.topic} key={route.key} valid={route.valid}")
+        return
+
+    import sys
+    from tempfile import NamedTemporaryFile
+
+    topic_batches: dict[str, list[dict[str, object]]] = {}
     for route in routes:
         if route.topic is None:
             assert route.fallback_path is not None
-            if dry_run:
-                print(f"fallback {route.fallback_path}")
-            else:
-                _append_fallback(route.fallback_path, route.record)
+            _append_fallback(route.fallback_path, route.record)
             continue
-        if dry_run:
-            print(f"produce topic={route.topic} key={route.key} valid={route.valid}")
-        else:
-            assert route.key is not None
-            _produce(route.topic, route.key, route.record, broker)
+        topic_batches.setdefault(route.topic, []).append(route.record)
+
+    total = sum(len(v) for v in topic_batches.values())
+    sent = 0
+    for topic, records in topic_batches.items():
+        with NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as tmp:
+            for rec in records:
+                _ = tmp.write(json.dumps(rec, sort_keys=True, separators=(",", ":")).replace("\n", "") + "\n")
+            tmp_path = tmp.name
+
+        _ = subprocess.run(
+            ["docker", "compose", "exec", "-T", "redpanda", "rpk", "topic", "produce", topic],
+            input=Path(tmp_path).read_text(),
+            text=True,
+            check=True,
+            capture_output=True,
+        )
+        Path(tmp_path).unlink()
+        sent += len(records)
+        print(f"  {topic}: {len(records)} events ({sent}/{total})", file=sys.stderr)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -155,7 +208,10 @@ def build_parser() -> argparse.ArgumentParser:
     _ = parser.add_argument("--input", type=Path)
     _ = parser.add_argument("--broker", default="localhost:19092")
     _ = parser.add_argument("--tenant")
-    _ = parser.add_argument("--profile", default="demo", choices=["smoke", "demo"])
+    _ = parser.add_argument("--profile", default="demo", choices=["smoke", "demo", "industrial_demo"])
+    _ = parser.add_argument(
+        "--mode", choices=[mode.value for mode in ProducerMode], default=ProducerMode.BACKFILL_REPLAY.value
+    )
     _ = parser.add_argument("--dry-run", action="store_true")
     _ = parser.add_argument("--output-dir", type=Path, default=Path("data"))
     return parser
@@ -168,6 +224,7 @@ def main(argv: list[str] | None = None) -> int:
     records = _read_jsonl(input_path)
     if args.tenant:
         records = [record for record in records if record.get("tenant_id") == args.tenant]
+    records = [apply_producer_mode(record, ProducerMode(args.mode)) for record in records]
     routes = plan_routes(records, args.output_dir)
     publish_routes(routes, args.broker, args.dry_run)
     valid_count = sum(1 for route in routes if route.valid)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -12,6 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+USE_CLICKHOUSE = os.environ.get("USE_CLICKHOUSE", "").strip().lower() in ("1", "true", "yes")
+
+if USE_CLICKHOUSE:
+    from scripts._clickhouse_client import clickhouse_execute_sql as _ch_execute_sql
+    from scripts._clickhouse_client import clickhouse_query_rows as _ch_query_rows
+
+_SOURCE_TOPIC = "clickhouse.dwd_apm_anomaly_events" if USE_CLICKHOUSE else "doris.dwd_apm_anomaly_events"
+
 from src.serving.quality_events import event_from_late_record, events_from_quality_flags
 from src.serving.triage_evidence import build_triage_evidence, evidence_json
 from src.triage_service.persist import recommendation_row
@@ -20,20 +29,20 @@ from src.triage_service.validation import validate_recommendation
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Load Phase 3 triage evidence and fallback recommendations into Doris.")
+    parser = argparse.ArgumentParser(description="Load Phase 3 triage evidence and fallback recommendations.")
     parser.add_argument("--limit", type=int, default=5)
     args = parser.parse_args()
 
     anomalies = _query_rows(
-        """
+        f"""
         SELECT tenant_id, anomaly_id, asset_id, tag_id, metric_name,
-               CAST(window_start AS CHAR), CAST(window_end AS CHAR),
+               {_cast_text("window_start")}, {_cast_text("window_end")},
                observed_value, baseline_value, expected_value,
                quality_flags, source_event_ids, plant_id, rule_id, severity
-        FROM fact_apm_anomaly_events
+        FROM dwd_apm_anomaly_events
         ORDER BY window_start DESC, anomaly_id
-        LIMIT {limit}
-        """.format(limit=args.limit),
+        LIMIT {args.limit}
+        """,
         (
             "tenant_id",
             "anomaly_id",
@@ -53,14 +62,15 @@ def main() -> int:
         ),
     )
     if not anomalies:
-        raise SystemExit("No anomaly rows found in Doris; run Flink and Doris Routine Load first.")
+        raise SystemExit("No anomaly rows found in serving store; run Flink and serving ingest first.")
 
     sql_statements: list[str] = []
-    quality_events_by_id: dict[str, dict[str, Any]] = {}
+    all_quality_events: dict[str, dict[str, Any]] = {}
     evidence_count = 0
     recommendation_count = 0
 
     for anomaly in anomalies:
+        quality_events_by_id: dict[str, dict[str, Any]] = {}
         anomaly["quality_flags"] = _parse_jsonish(anomaly.get("quality_flags"))
         anomaly["source_event_ids"] = _parse_jsonish(anomaly.get("source_event_ids"))
         sensor_window = _sensor_window(str(anomaly["tenant_id"]), str(anomaly["tag_id"]))
@@ -71,6 +81,8 @@ def main() -> int:
             quality_events_by_id[str(event["quality_event_id"])] = event
         for late_record in late_records:
             quality_events_by_id[str(late_record["quality_event_id"])] = event_from_late_record(late_record)
+
+        all_quality_events.update(quality_events_by_id)
 
         evidence = build_triage_evidence(
             tenant_id=str(anomaly["tenant_id"]),
@@ -90,7 +102,7 @@ def main() -> int:
         evidence_count += 1
         recommendation_count += 1
 
-    for quality_event in quality_events_by_id.values():
+    for quality_event in all_quality_events.values():
         sql_statements.append(_insert_quality_event(quality_event))
 
     _execute_sql("\n".join(sql_statements))
@@ -98,7 +110,7 @@ def main() -> int:
         "loaded "
         f"{evidence_count} evidence rows, "
         f"{recommendation_count} recommendation rows, "
-        f"{len(quality_events_by_id)} quality event rows"
+        f"{len(all_quality_events)} quality event rows"
     )
     return 0
 
@@ -107,10 +119,8 @@ def _query_rows(sql: str, columns: tuple[str, ...]) -> list[dict[str, Any]]:
     result = subprocess.run(
         [
             "docker",
-            "compose",
             "exec",
-            "-T",
-            "doris",
+            "industrial-apm-flink-agent-triage-doris-1",
             "mysql",
             "-N",
             "-B",
@@ -130,13 +140,28 @@ def _query_rows(sql: str, columns: tuple[str, ...]) -> list[dict[str, Any]]:
         if not line.strip():
             continue
         values = line.split("\t")
-        rows.append({column: _null_if_needed(values[index]) if index < len(values) else None for index, column in enumerate(columns)})
+        rows.append(
+            {
+                column: _null_if_needed(values[index]) if index < len(values) else None
+                for index, column in enumerate(columns)
+            }
+        )
     return rows
 
 
 def _execute_sql(sql: str) -> None:
     _ = subprocess.run(
-        ["docker", "compose", "exec", "-T", "doris", "mysql", "-uroot", "-h127.0.0.1", "-P9030", "industrial_apm"],
+        [
+            "docker",
+            "exec",
+            "-i",
+            "industrial-apm-flink-agent-triage-doris-1",
+            "mysql",
+            "-uroot",
+            "-h127.0.0.1",
+            "-P9030",
+            "industrial_apm",
+        ],
         input=sql,
         check=True,
         text=True,
@@ -146,8 +171,8 @@ def _execute_sql(sql: str) -> None:
 def _sensor_window(tenant_id: str, tag_id: str) -> list[dict[str, Any]]:
     rows = _query_rows(
         f"""
-        SELECT tenant_id, event_id, tag_id, metric_name, CAST(event_time AS CHAR), value, quality_flags
-        FROM dwd_apm_sensor_readings_rt
+        SELECT tenant_id, event_id, tag_id, metric_name, {_cast_text("event_time")}, value, quality_flags
+        FROM dwd_apm_realtime_signal_readings
         WHERE tenant_id = {_sql(tenant_id)} AND tag_id = {_sql(tag_id)}
         ORDER BY event_time DESC
         LIMIT 5
@@ -163,8 +188,8 @@ def _late_records(tenant_id: str, tag_id: str) -> list[dict[str, Any]]:
     rows = _query_rows(
         f"""
         SELECT tenant_id, event_id, plant_id, asset_id, tag_id, metric_name,
-               CAST(event_time AS CHAR), CAST(watermark_time AS CHAR), lateness_minutes, reason
-        FROM fact_apm_late_sensor_readings
+               {_cast_text("event_time")}, {_cast_text("watermark_time")}, lateness_minutes, reason
+        FROM dwd_apm_late_sensor_readings
         WHERE tenant_id = {_sql(tenant_id)} AND tag_id = {_sql(tag_id)}
         ORDER BY event_time DESC
         LIMIT 5
@@ -188,8 +213,8 @@ def _late_records(tenant_id: str, tag_id: str) -> list[dict[str, Any]]:
 def _stream_health(tenant_id: str) -> list[dict[str, Any]]:
     return _query_rows(
         f"""
-        SELECT tenant_id, job_name, CAST(observed_at AS CHAR), watermark_lag_seconds, late_event_count, checkpoint_status
-        FROM fact_apm_stream_health_snapshots
+        SELECT tenant_id, job_name, {_cast_text("observed_at")}, watermark_lag_seconds, late_event_count, checkpoint_status
+        FROM dwd_apm_stream_health_snapshots
         WHERE tenant_id = {_sql(tenant_id)}
         ORDER BY observed_at DESC
         LIMIT 1
@@ -205,8 +230,8 @@ def _insert_evidence(evidence: dict[str, Any], created_at: str) -> str:
         "window_start, window_end, evidence_json, created_at, source_topic) VALUES "
         f"({_sql(evidence['evidence_id'])}, {_sql(evidence['evidence_version'])}, {_sql(evidence['tenant_id'])}, "
         f"{_sql(evidence['anomaly_id'])}, {_sql(evidence.get('asset_id'))}, {_sql(evidence.get('tag_id'))}, "
-        f"{_sql(evidence.get('metric_name'))}, {_sql(evidence.get('window_start'))}, {_sql(evidence.get('window_end'))}, "
-        f"{_sql(evidence_json(evidence))}, {_sql(created_at)}, 'doris.fact_apm_anomaly_events');"
+        f"{_sql(evidence.get('metric_name'))}, {_datetime_sql(evidence.get('window_start'))}, {_datetime_sql(evidence.get('window_end'))}, "
+        f"{_sql(evidence_json(evidence))}, {_datetime_sql(created_at)}, '{_SOURCE_TOPIC}');"
     )
 
 
@@ -232,7 +257,10 @@ def _insert_recommendation(row: dict[str, Any]) -> str:
         "quarantine_reason",
         "created_at",
     )
-    values = ", ".join(_sql(row.get(column)) for column in columns)
+    values = ", ".join(
+        _datetime_sql(row.get(column)) if column == "created_at" else _sql(row.get(column))
+        for column in columns
+    )
     return f"INSERT INTO fact_apm_agent_recommendations ({', '.join(columns)}) VALUES ({values});"
 
 
@@ -255,7 +283,10 @@ def _insert_quality_event(row: dict[str, Any]) -> str:
         "created_at",
         "source_topic",
     )
-    values = ", ".join(_sql(row.get(column)) for column in columns[:-1])
+    values = ", ".join(
+        _datetime_sql(row.get(column)) if column in ("window_start", "window_end", "created_at") else _sql(row.get(column))
+        for column in columns[:-1]
+    )
     return f"INSERT INTO fact_apm_quality_events ({', '.join(columns)}) VALUES ({values}, 'phase3-triage-loader');"
 
 
@@ -286,7 +317,26 @@ def _sql(value: Any) -> str:
 
 
 def _now() -> str:
-    return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return _normalize_datetime(datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"))
+
+
+def _datetime_sql(value: Any) -> str:
+    if value is None:
+        return "NULL"
+    return _sql(_normalize_datetime(str(value)))
+
+
+def _normalize_datetime(value: str) -> str:
+    return value.replace("T", " ").removesuffix("Z").removesuffix("+00:00")
+
+
+def _cast_text(column: str) -> str:
+    return f"toString({column})" if USE_CLICKHOUSE else f"CAST({column} AS CHAR)"
+
+
+if USE_CLICKHOUSE:
+    _query_rows = _ch_query_rows
+    _execute_sql = _ch_execute_sql
 
 
 if __name__ == "__main__":

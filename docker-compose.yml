@@ -21,7 +21,11 @@ services:
       - "19644:9644"
       - "18082:18082"
     healthcheck:
-      test: ["CMD-SHELL", "rpk -X brokers=localhost:19092 cluster health | grep -q Healthy"]
+      test:
+        [
+          "CMD-SHELL",
+          "rpk -X brokers=localhost:19092 cluster health | grep -q Healthy",
+        ]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -42,7 +46,9 @@ services:
     ports:
       - "18081:8081"
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+      FLINK_PROPERTIES: |
+        jobmanager.memory.process.size: 1600m
     volumes:
       - ./flink/lib:/opt/flink/usrlib:ro
       - ./sql:/opt/flink/sql:ro
@@ -59,8 +65,15 @@ services:
       flink-jobmanager:
         condition: service_started
     environment:
-      - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
-      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=2
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+      TASK_MANAGER_NUMBER_OF_TASK_SLOTS: 36
+      FLINK_ENV_JAVA_OPTS: -XX:MaxMetaspaceSize=768m -XX:ReservedCodeCacheSize=256m
+      FLINK_PROPERTIES: |
+        taskmanager.numberOfTaskSlots: 36
+        taskmanager.memory.process.size: 4096m
+        taskmanager.memory.jvm-metaspace.size: 768m
+        taskmanager.memory.jvm-overhead.min: 512m
+        taskmanager.memory.jvm-overhead.max: 1024m
     volumes:
       - ./flink/lib:/opt/flink/usrlib:ro
       - ./sql:/opt/flink/sql:ro
@@ -116,9 +129,11 @@ services:
       retries: 20
 
   grafana:
-    image: grafana/grafana:10.4.13
+    build:
+      context: .
+      dockerfile: docker/grafana.Dockerfile
     depends_on:
-      doris:
+      clickhouse:
         condition: service_healthy
     ports:
       - "13000:3000"
@@ -127,31 +142,98 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=apm_demo
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Editor
-      - GF_INSTALL_PLUGINS=
     volumes:
       - ./configs/grafana/datasources:/etc/grafana/provisioning/datasources:ro
-      - ./configs/grafana/dashboards:/etc/grafana/dashboards:ro
+      - ./configs/grafana/dashboards/apm-overview-ch.json:/etc/grafana/dashboards/apm-overview-ch.json:ro
+      - ./configs/grafana/dashboards/apm-asset-health-ch.json:/etc/grafana/dashboards/apm-asset-health-ch.json:ro
       - ./configs/grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/default.yml:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health | grep -q ok"]
+      test:
+        ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health | grep -q ok"]
       interval: 15s
       timeout: 5s
       retries: 10
 
-  doris:
-    image: apache/doris:3.0.5-all
-    entrypoint: ["bash", "-lc", "bash entry_point.sh && tail -f /dev/null"]
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.12-alpine
     ports:
-      - "18030:8030"
-      - "19030:9030"
+      - "18123:8123"
+      - "19000:9000"
     environment:
-      - FE_SERVERS=fe1:127.0.0.1:9010
-      - FE_ID=1
-      - SKIP_CHECK_ULIMIT=true
+      - CLICKHOUSE_DB=industrial_apm
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_PASSWORD=clickhouse_secret
     volumes:
-      - ./sql:/opt/doris/sql:ro
+      - ./sql:/opt/clickhouse/sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "mysql -uroot -h127.0.0.1 -P9030 -N -B -e 'SHOW BACKENDS' 2>/dev/null | awk -F '\\t' '{ if ($10 == \"true\") found = 1 } END { exit !found }'"]
-      interval: 15s
-      timeout: 10s
-      retries: 20
+      test:
+        [
+          "CMD-SHELL",
+          "clickhouse-client --host 127.0.0.1 --port 9000 --user default --password clickhouse_secret --query 'SELECT 1' >/dev/null",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  x-flink-agent-base: &flink-agent-base
+    image: python:3.13-slim
+    volumes:
+      - ./src:/app/src:ro
+      - ./configs:/app/configs:ro
+      - ./contracts:/app/contracts:ro
+      - ./.env:/app/.env:ro
+    working_dir: /app
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      flink-jobmanager:
+        condition: service_started
+    restart: unless-stopped
+
+  flink-agent-1:
+    <<: *flink-agent-base
+    command: >
+      sh -c "
+      pip install -q kafka-python jsonschema PyYAML &&
+      python -m src.flink_agents.realtime_diagnosis_agent
+      --tenant all --broker redpanda:19092 --use-llm --workers 4
+      "
+
+  flink-agent-2:
+    <<: *flink-agent-base
+    command: >
+      sh -c "
+      pip install -q kafka-python jsonschema PyYAML &&
+      python -m src.flink_agents.realtime_diagnosis_agent
+      --tenant all --broker redpanda:19092 --use-llm --workers 4
+      "
+
+  flink-agent-3:
+    <<: *flink-agent-base
+    command: >
+      sh -c "
+      pip install -q kafka-python jsonschema PyYAML &&
+      python -m src.flink_agents.realtime_diagnosis_agent
+      --tenant all --broker redpanda:19092 --use-llm --workers 4
+      "
+
+  data-pump:
+    image: python:3.13-slim
+    command: >
+      sh -c "
+      pip install -q kafka-python jsonschema PyYAML &&
+      python /app/scripts/e2e_data_pump.py --broker redpanda:19092 --interval 1.0
+      "
+    volumes:
+      - ./src:/app/src:ro
+      - ./configs:/app/configs:ro
+      - ./contracts:/app/contracts:ro
+      - ./scripts:/app/scripts:ro
+    working_dir: /app
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      flink-agent-1:
+        condition: service_started
+    restart: unless-stopped

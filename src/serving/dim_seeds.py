@@ -42,7 +42,7 @@ def seed_dim_asset(
     criticality: str = "medium",
     parent_asset_id: str | None = None,
 ) -> dict[str, Any]:
-    now = _now()
+    _ = _now()
     return {
         "tenant_id": tenant_id,
         "site_id": site_id,

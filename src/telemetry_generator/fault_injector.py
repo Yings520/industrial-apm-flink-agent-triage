@@ -6,6 +6,7 @@ Generates a 30-day fault timeline per tenant. Each fault:
 - Has a degradation window where telemetry values drift
 - Later triggers work order + inspection records
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -29,11 +30,11 @@ class FaultEvent:
     failure_mode_id: str
     failure_mode_name: str
     metric_name: str
-    start_time: str      # when degradation begins
-    detect_time: str     # when anomaly should be visible
-    end_time: str        # when fault is resolved (work order completed)
-    severity: str        # info/warning/critical
-    base_value: float    # normal operating value
+    start_time: str  # when degradation begins
+    detect_time: str  # when anomaly should be visible
+    end_time: str  # when fault is resolved (work order completed)
+    severity: str  # info/warning/critical
+    base_value: float  # normal operating value
     degraded_value: float  # value at detect_time
     description: str
 
@@ -41,9 +42,9 @@ class FaultEvent:
 @dataclass
 class FaultInjectionResult:
     events: list[dict[str, Any]] = field(default_factory=list)
-    degradation_map: dict[
-        str, list[dict[str, Any]]
-    ] = field(default_factory=dict)  # tenant_id|tag_id|metric_name -> [period, value]
+    degradation_map: dict[str, list[dict[str, Any]]] = field(
+        default_factory=dict
+    )  # tenant_id|tag_id|metric_name -> [period, value]
 
 
 def _stable_id(prefix: str, *parts: str) -> str:
@@ -79,7 +80,7 @@ def generate_fault_timeline(
     rng.shuffle(available_days)
     chosen_days = sorted(available_days[:fault_count])
 
-    for fault_index, fault_day in enumerate(chosen_days):
+    for _fault_index, fault_day in enumerate(chosen_days):
         fault_id = _stable_id(
             "fm",
             tenant_id,
@@ -221,6 +222,6 @@ def write_fault_timeline(faults: list[FaultEvent], output: Path) -> Path:
     ]
     with output.open("w", encoding="utf-8") as f:
         for record in records:
-            f.write(json.dumps(record, sort_keys=True))
-            f.write("\n")
+            _ = f.write(json.dumps(record, sort_keys=True))
+            _ = f.write("\n")
     return output

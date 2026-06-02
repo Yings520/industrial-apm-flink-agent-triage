@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: ClickHouse
+    type: vertamedia-clickhouse-datasource
+    access: proxy
+    url: http://clickhouse:8123
+    database: industrial_apm
+    user: default
+    uid: apm-clickhouse
+    editable: true
+    isDefault: true
+    secureJsonData:
+      password: clickhouse_secret
+    jsonData:
+      defaultDatabase: industrial_apm

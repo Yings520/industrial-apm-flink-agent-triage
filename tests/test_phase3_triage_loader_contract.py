@@ -14,7 +14,19 @@ def test_phase3_triage_loader_writes_evidence_recommendations_and_quality_events
 
 
 def test_phase3_triage_loader_reads_from_doris_serving_facts() -> None:
-    assert "fact_apm_anomaly_events" in LOADER
-    assert "dwd_apm_sensor_readings_rt" in LOADER
-    assert "fact_apm_late_sensor_readings" in LOADER
-    assert "fact_apm_stream_health_snapshots" in LOADER
+    assert "dwd_apm_anomaly_events" in LOADER
+    assert "dwd_apm_realtime_signal_readings" in LOADER
+    assert "dwd_apm_late_sensor_readings" in LOADER
+    assert "dwd_apm_stream_health_snapshots" in LOADER
+
+
+def test_phase3_triage_loader_has_clickhouse_text_casts() -> None:
+    assert "USE_CLICKHOUSE" in LOADER
+    assert "toString({column})" in LOADER
+    assert "CAST({column} AS CHAR)" in LOADER
+
+
+def test_phase3_triage_loader_normalizes_datetime_literals() -> None:
+    assert "_datetime_sql" in LOADER
+    assert ".replace(\"T\", \" \")" in LOADER
+    assert ".removesuffix(\"Z\")" in LOADER

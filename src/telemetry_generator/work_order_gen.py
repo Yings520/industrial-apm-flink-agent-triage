@@ -6,15 +6,15 @@ Generates 30 days of work orders per asset/tenant:
 - Preventive: periodic, no fault link
 - Inspection: tied to work orders, with findings and measurements
 """
+
 from __future__ import annotations
 
 import hashlib
 import json
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
 
 from src.telemetry_generator.fault_injector import FaultEvent
 
@@ -29,7 +29,7 @@ class WorkOrder:
     fault_id: str | None
     anomaly_id: str | None
     incident_id: str | None
-    work_type: str      # corrective, preventive, inspection
+    work_type: str  # corrective, preventive, inspection
     priority: str
     problem_code: str
     cause_code: str
@@ -39,7 +39,7 @@ class WorkOrder:
     parts_used: list[dict[str, object]]
     created_at: str
     completed_at: str
-    status: str         # open, completed, cancelled
+    status: str  # open, completed, cancelled
     source_system: str  # apm_triage, cmms, eam
 
 
@@ -52,7 +52,7 @@ class InspectionRecord:
     component_id: str | None
     inspection_type: str  # visual, thermal, vibration_analysis, oil_analysis
     findings: str
-    severity: str         # normal, degraded, action_required, critical
+    severity: str  # normal, degraded, action_required, critical
     measurements: dict[str, float]
     created_at: str
 
@@ -126,13 +126,14 @@ def generate_work_orders(
     days: int = 30,
     seed: int = 42,
 ) -> list[WorkOrder]:
+    del plant_id  # reserved for future use
     rng = random.Random(f"{seed}|{tenant_id}|{asset_id}|wo")
     orders: list[WorkOrder] = []
 
     if fault is not None:
         # Corrective work order from fault
-        fault_detect = datetime.fromisoformat(fault.detect_time.replace("Z", "+00:00"))
-        fault_end = datetime.fromisoformat(fault.end_time.replace("Z", "+00:00"))
+        _fault_detect = datetime.fromisoformat(fault.detect_time.replace("Z", "+00:00"))
+        _fault_end = datetime.fromisoformat(fault.end_time.replace("Z", "+00:00"))
 
         pcodes = PROBLEM_CODES.get(component_type, ["GEN001"])
         problem_code = rng.choice(pcodes)
@@ -165,9 +166,11 @@ def generate_work_orders(
                 ),
                 downtime_minutes=rng.choice([30, 60, 90, 120, 240, 480]),
                 parts_used=[
-                    {"part_number": f"SP-{component_type.upper()}-{rng.randint(100,999)}",
-                     "part_name": f"{component_type.replace('_',' ').title()} Assembly",
-                     "quantity": 1}
+                    {
+                        "part_number": f"SP-{component_type.upper()}-{rng.randint(100, 999)}",
+                        "part_name": f"{component_type.replace('_', ' ').title()} Assembly",
+                        "quantity": 1,
+                    }
                 ],
                 created_at=fault.detect_time,
                 completed_at=fault.end_time,
@@ -185,9 +188,7 @@ def generate_work_orders(
             break
         orders.append(
             WorkOrder(
-                work_order_id=_stable_id(
-                    "wo", tenant_id, asset_id, "preventive", str(day)
-                ),
+                work_order_id=_stable_id("wo", tenant_id, asset_id, "preventive", str(day)),
                 tenant_id=tenant_id,
                 asset_id=asset_id,
                 component_id=_stable_id("comp", tenant_id, asset_id, component_type),
@@ -311,8 +312,8 @@ def write_work_orders(orders: list[WorkOrder], output: Path) -> Path:
     ]
     with output.open("w", encoding="utf-8") as f:
         for record in records:
-            f.write(json.dumps(record, sort_keys=True))
-            f.write("\n")
+            _ = f.write(json.dumps(record, sort_keys=True))
+            _ = f.write("\n")
     return output
 
 
@@ -335,6 +336,6 @@ def write_inspections(inspections: list[InspectionRecord], output: Path) -> Path
     ]
     with output.open("w", encoding="utf-8") as f:
         for record in records:
-            f.write(json.dumps(record, sort_keys=True))
-            f.write("\n")
+            _ = f.write(json.dumps(record, sort_keys=True))
+            _ = f.write("\n")
     return output

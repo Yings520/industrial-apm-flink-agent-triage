@@ -5,7 +5,9 @@ from datetime import datetime
 from src.flink_jobs.event_time import format_event_time, is_beyond_allowed_lateness, parse_event_time
 
 
-def late_event_record(event: dict[str, object], watermark_time: datetime, reason: str = "beyond_allowed_lateness") -> dict[str, object]:
+def late_event_record(
+    event: dict[str, object], watermark_time: datetime, reason: str = "beyond_allowed_lateness"
+) -> dict[str, object]:
     event_time_raw = event["event_time"]
     if not isinstance(event_time_raw, str):
         raise ValueError("event_time must be a string")
@@ -31,4 +33,3 @@ def classify_late_event(event: dict[str, object], watermark_time: datetime) -> d
     if is_beyond_allowed_lateness(parse_event_time(event_time_raw), watermark_time):
         return late_event_record(event, watermark_time)
     return None
-

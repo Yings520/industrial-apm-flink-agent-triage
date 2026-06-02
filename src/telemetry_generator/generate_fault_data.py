@@ -3,21 +3,19 @@
 
 Usage: uv run python -m src.telemetry_generator.generate_fault_data --seed 42 --days 30
 """
+
 from __future__ import annotations
 
 import argparse
-import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from src.telemetry_generator.config import build_asset_id, load_asset_config
 from src.telemetry_generator.fault_injector import (
     FaultEvent,
-    build_degradation_map,
     generate_fault_timeline,
     write_fault_timeline,
 )
-from src.telemetry_generator.models import AssetConfig
 from src.telemetry_generator.work_order_gen import (
     InspectionRecord,
     WorkOrder,
@@ -32,8 +30,10 @@ def generate_all(
     *,
     seed: int = 42,
     days: int = 30,
-    output_dir: Path = Path("data/generated"),
-) -> dict[str, Path]:
+    output_dir: Path | None = None,
+) -> dict[str, Path | int]:
+    if output_dir is None:
+        output_dir = Path("data/generated")
     asset_config = load_asset_config()
     start_date = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days)
 
@@ -173,9 +173,9 @@ def generate_all(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate synthetic fault timeline and work orders")
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--days", type=int, default=30)
-    parser.add_argument("--output-dir", type=Path, default=Path("data/generated"))
+    _ = parser.add_argument("--seed", type=int, default=42)
+    _ = parser.add_argument("--days", type=int, default=30)
+    _ = parser.add_argument("--output-dir", type=Path, default=Path("data/generated"))
     args = parser.parse_args()
 
     result = generate_all(seed=args.seed, days=args.days, output_dir=args.output_dir)

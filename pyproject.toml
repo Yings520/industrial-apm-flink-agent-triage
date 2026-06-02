@@ -18,4 +18,7 @@ dev = [
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+markers = [
+  "llm: tests that require a real LLM API connection (OPENAI_API_KEY in env)",
+]
 

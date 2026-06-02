@@ -1,10 +1,19 @@
 .planning/
 .DS_Store
 
+# Environment & secrets
+.env
+.env.*
+
 data/generated/
 data/rejected/
+data/reports/
 data/validation-summary*.json
 flink/lib/
+reports/*.log
+reports/*.json
+reports/*.jsonl
+reports/*.csv
 reports/*.md
 .pytest_cache/
 __pycache__/

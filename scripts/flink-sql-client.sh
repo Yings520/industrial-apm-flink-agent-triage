@@ -11,6 +11,7 @@ if [[ ! -f "$sql_file" ]]; then
   echo "SQL file not found: $sql_file" >&2
   exit 2
 fi
+container_sql_file="/opt/flink/${sql_file}"
 
 connector_version="3.3.0-1.19"
 connector_name="flink-sql-connector-kafka-${connector_version}.jar"
@@ -26,4 +27,4 @@ fi
 docker compose exec -T flink-jobmanager \
   /opt/flink/bin/sql-client.sh \
   -l /opt/flink/usrlib \
-  -f "/opt/flink/sql/$(basename "$sql_file")"
+  -f "${container_sql_file}"

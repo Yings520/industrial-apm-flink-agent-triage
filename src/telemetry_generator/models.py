@@ -55,6 +55,7 @@ class StreamingTopicConfig(TypedDict):
     mart_anomalies: str
     mart_late_events: str
     mart_stream_health: str
+    mart_realtime_diagnosis: str
 
 
 class StreamingFlinkConfig(TypedDict):
@@ -124,11 +125,88 @@ class TagMetadata(TypedDict):
     plant_id: str
     asset_id: str
     asset_name: str
+    asset_type: str
+    component_id: str
+    component_type: str
+    measurement_point_id: str
+    measurement_point: str
     tag_id: str
     tag_name: str
     metric_name: str
     unit: str
+    sampling_rate_hz: float
+    normal_range_min: float
+    normal_range_max: float
+    engineering_limit_min: float
+    engineering_limit_max: float
     threshold_profile_id: str
+
+
+class MeasurementPointConfig(TypedDict):
+    component_type: str
+    measurement_point: str
+    metric_name: str
+    tag_suffix: str
+    unit: str
+    sampling_rate_hz: float
+    normal_range_min: float
+    normal_range_max: float
+    engineering_limit_min: float
+    engineering_limit_max: float
+
+
+class MeasurementPointCatalogConfig(TypedDict):
+    schema_version: str
+    asset_types: list[str]
+    measurement_points: dict[str, list[MeasurementPointConfig]]
+
+
+class MeasurementPointRecord(MeasurementPointConfig):
+    asset_type: str
+    measurement_point_id: str
+
+
+class ScenarioPhaseConfig(TypedDict):
+    state: str
+    start_day: int
+    end_day: int
+
+
+class FailureTimelineConfig(TypedDict):
+    asset_type: str
+    failure_mode_id: str
+    component_type: str
+    phases: list[ScenarioPhaseConfig]
+
+
+class SyntheticScenarioConfig(TypedDict):
+    schema_version: str
+    default_start_time: str
+    default_days: int
+    operating_states: list[str]
+    failure_timelines: dict[str, FailureTimelineConfig]
+
+
+class TelemetryWindow15m(TypedDict):
+    tenant_id: str
+    asset_id: str
+    component_id: str
+    measurement_point_id: str
+    tag_id: str
+    window_start: str
+    window_end: str
+    avg_value: float
+    min_value: float
+    max_value: float
+    stddev_value: float
+    p95_value: float
+    slope: float
+    z_score: float
+    event_count: int
+    expected_count: int
+    quality_flags: list[str]
+    operating_state: str
+    degradation_stage: str
 
 
 class ComponentConfig(TypedDict):

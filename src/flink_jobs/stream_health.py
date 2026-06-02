@@ -22,4 +22,3 @@ def stream_health_record(
         "checkpoint_status": checkpoint_status,
         "observed_at": format_event_time(observed_at),
     }
-

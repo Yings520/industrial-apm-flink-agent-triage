@@ -14,3 +14,4 @@ topics:
   mart_anomalies: "{tenant_id}.mart_apm__fct_anomaly_events.v1"
   mart_late_events: "{tenant_id}.mart_apm__fct_late_sensor_readings.v1"
   mart_stream_health: "{tenant_id}.mart_apm__fct_stream_health_snapshots.v1"
+  mart_realtime_diagnosis: "{tenant_id}.mart_apm__fct_realtime_diagnosis_events.v1"

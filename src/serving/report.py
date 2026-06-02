@@ -18,7 +18,9 @@ SECTION_HEADINGS = (
 
 
 def render_report(results: dict[str, Any]) -> str:
-    generated_at = results.get("generated_at") or datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    generated_at = results.get("generated_at") or datetime.now(UTC).replace(microsecond=0).isoformat().replace(
+        "+00:00", "Z"
+    )
     lines = [
         "# Phase 3 Serving Report",
         "",
@@ -37,7 +39,7 @@ def render_report(results: dict[str, Any]) -> str:
 
 def write_report(results: dict[str, Any], output: Path) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(render_report(results), encoding="utf-8")
+    _ = output.write_text(render_report(results), encoding="utf-8")
     return output
 
 
@@ -50,10 +52,18 @@ def sample_results() -> dict[str, Any]:
         "anomaly_trends": [{"tenant_id": "tenant_northwind", "rule_id": "threshold_spike", "anomaly_count": 8}],
         "late_event_rate": [{"tenant_id": "tenant_northwind", "late_event_count": 0}],
         "quality_failures": [{"tenant_id": "tenant_northwind", "check_name": "range", "failure_count": 8}],
-        "tenant_asset_health": [{"tenant_id": "tenant_northwind", "asset_id": "asset_northwind_mfg_01_0001", "critical_anomaly_count": 8}],
-        "incident_queue": [{"tenant_id": "tenant_northwind", "anomaly_id": "anom_phase03_demo", "severity": "critical"}],
-        "stream_health": [{"tenant_id": "tenant_northwind", "job_name": "flink_anomalies", "checkpoint_status": "demo"}],
-        "triage_recommendations": [{"tenant_id": "tenant_northwind", "anomaly_id": "anom_phase03_demo", "status": "fallback"}],
+        "tenant_asset_health": [
+            {"tenant_id": "tenant_northwind", "asset_id": "asset_northwind_mfg_01_0001", "critical_anomaly_count": 8}
+        ],
+        "incident_queue": [
+            {"tenant_id": "tenant_northwind", "anomaly_id": "anom_phase03_demo", "severity": "critical"}
+        ],
+        "stream_health": [
+            {"tenant_id": "tenant_northwind", "job_name": "flink_anomalies", "checkpoint_status": "demo"}
+        ],
+        "triage_recommendations": [
+            {"tenant_id": "tenant_northwind", "anomaly_id": "anom_phase03_demo", "status": "fallback"}
+        ],
         "local_demo_metrics": {"event_count": 12, "anomaly_count": 8, "llm_provider": "fallback"},
     }
 

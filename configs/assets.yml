@@ -1,6 +1,6 @@
 schema_version: asset_portfolio.v1
 plants_per_tenant: 3
-assets_per_plant: 20
+assets_per_plant: 10
 metric_types:
   - name: temperature
     unit: celsius

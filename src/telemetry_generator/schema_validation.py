@@ -70,7 +70,7 @@ def _profile_files(input_dir: Path, profile_name: str, schema_name: str) -> list
     if schema_name == "raw_sensor_event":
         return [
             input_dir / f"raw_sensor_events_{profile_name}.jsonl",
-            input_dir / f"invalid_raw_sensor_events_{profile_name}.jsonl",
+            input_dir / f"raw_sensor_events_invalid_{profile_name}.jsonl",
         ]
     return [
         input_dir / f"sensor_events_{profile_name}.jsonl",
@@ -116,11 +116,7 @@ def _iter_records(
 def _missing_required_fields(error: ValidationError) -> list[str]:
     validator_value = error.validator_value
     instance = cast(object, error.instance)
-    if (
-        error.validator != "required"
-        or not isinstance(instance, dict)
-        or not isinstance(validator_value, list)
-    ):
+    if error.validator != "required" or not isinstance(instance, dict) or not isinstance(validator_value, list):
         return []
     instance_mapping = cast(dict[str, object], instance)
     required_fields = cast(list[object], validator_value)

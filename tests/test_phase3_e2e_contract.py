@@ -32,7 +32,7 @@ def test_makefile_exposes_phase3_targets() -> None:
 
 
 def test_phase3_contract_mentions_routine_load_and_fallback() -> None:
-    routine_sql = Path("sql/doris_routine_load.sql").read_text()
+    routine_sql = Path("sql/doris/templates/routine_load.sql.tpl").read_text()
     readme = Path("README.md").read_text()
     assert "CREATE ROUTINE LOAD" in routine_sql
     assert "OFFSET_BEGINNING" in routine_sql

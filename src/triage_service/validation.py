@@ -30,18 +30,21 @@ def validate_recommendation(recommendation: dict[str, Any], evidence: dict[str, 
     if not recommendation.get("findings") or not recommendation.get("recommended_checks"):
         errors.append("evidence_free")
 
-    allowed_runbook_refs = {
-        f"{ref.get('runbook_id')}#{ref.get('section')}" for ref in evidence.get("runbook_refs", [])
-    }
+    allowed_runbook_refs = {f"{ref.get('runbook_id')}#{ref.get('section')}" for ref in evidence.get("runbook_refs", [])}
     for ref in recommendation.get("runbook_references") or []:
         if allowed_runbook_refs and ref not in allowed_runbook_refs:
             errors.append(f"unsupported_runbook_ref:{ref}")
 
-    text = " ".join(
-        str(value)
-        for key in ("summary", "findings", "possible_causes", "recommended_checks")
-        for value in (recommendation.get(key) if isinstance(recommendation.get(key), list) else [recommendation.get(key)])
-    )
+    text_parts: list[str] = []
+    for key in ("summary", "findings", "possible_causes", "recommended_checks"):
+        raw = recommendation.get(key)
+        if raw is None:
+            text_parts.append("")
+        elif isinstance(raw, list):
+            text_parts.extend(str(v) for v in raw)
+        else:
+            text_parts.append(str(raw))
+    text = " ".join(text_parts)
     if BANNED_LANGUAGE.search(text):
         errors.append("banned_autonomous_claim")
 

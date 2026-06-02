@@ -10,6 +10,7 @@ TOPIC_KEYS = (
     "mart_anomalies",
     "mart_late_events",
     "mart_stream_health",
+    "mart_realtime_diagnosis",
 )
 
 
@@ -40,4 +41,3 @@ def raw_message_key(record: dict[str, object]) -> str:
     if not isinstance(tag_id, str) or not tag_id:
         raise ValueError("tag_id is required for raw message key")
     return f"{tenant_id}|{tag_id}"
-

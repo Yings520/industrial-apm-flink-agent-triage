@@ -22,6 +22,11 @@ class Recommendation:
     token_cost: float
     latency_ms: int
     created_at: str
+    asset_id: str = ""
+    component_id: str = ""
+    related_signals: list[str] = field(default_factory=list)
+    related_failure_modes: list[str] = field(default_factory=list)
+    suggested_action: str = ""
     status: str = "fallback"
 
     def as_dict(self) -> dict[str, object]:
@@ -31,11 +36,16 @@ class Recommendation:
             "tenant_id": self.tenant_id,
             "anomaly_id": self.anomaly_id,
             "evidence_version": self.evidence_version,
+            "asset_id": self.asset_id,
+            "component_id": self.component_id,
             "summary": self.summary,
             "findings": list(self.findings),
             "possible_causes": list(self.possible_causes),
             "recommended_checks": list(self.recommended_checks),
             "runbook_references": list(self.runbook_references),
+            "related_signals": list(self.related_signals),
+            "related_failure_modes": list(self.related_failure_modes),
+            "suggested_action": self.suggested_action,
             "confidence_label": self.confidence_label,
             "quality_caveats": list(self.quality_caveats),
             "model_name": self.model_name,

@@ -14,22 +14,41 @@ topics=(
   "${TENANT}.mart_apm__fct_stream_health_snapshots.v1"
 )
 
+cdc_jobs=(
+  "rl_cdc_dim_apm_assets"
+  "rl_cdc_dim_apm_asset_components"
+  "rl_cdc_dim_apm_signal_tags_mapping"
+  "rl_cdc_dim_apm_failuremode"
+  "rl_cdc_dim_apm_failureevent"
+  "rl_cdc_dim_apm_workorder"
+  "rl_cdc_dim_apm_maintenance"
+  "rl_cdc_dim_apm_tenants"
+)
+
 jobs=(
-  "rl_staging_apm_sensor_readings"
-  "rl_mart_apm_anomaly_events"
-  "rl_mart_apm_late_sensor_readings"
-  "rl_mart_apm_stream_health_snapshots"
+  "rl_${TENANT}_dwd_realtime_signal_readings"
+  "rl_${TENANT}_dwd_anomaly_events"
+  "rl_${TENANT}_dwd_late_sensor_readings"
+  "rl_${TENANT}_dwd_stream_health_snapshots"
+  "rl_${TENANT}_dwd_realtime_diagnosis_events"
+  "rl_${TENANT}_dwd_dlq_events"
 )
 
 tables=(
   "fact_apm_agent_recommendations"
   "serving_apm_triage_evidence"
   "fact_apm_quality_events"
-  "fact_apm_stream_health_snapshots"
-  "fact_apm_late_sensor_readings"
-  "fact_apm_anomaly_events"
-  "dwd_apm_sensor_readings_rt"
+  "dwd_apm_stream_health_snapshots"
+  "dwd_apm_late_sensor_readings"
+  "dwd_apm_anomaly_events"
+  "dwd_apm_realtime_signal_readings"
+  "dwd_apm_realtime_diagnosis_events"
+  "dwd_apm_dlq_events"
 )
+
+for job in "${cdc_jobs[@]}"; do
+  ./scripts/doris-sql.sh -e "STOP ROUTINE LOAD FOR industrial_apm.${job};" >/dev/null 2>&1 || true
+done
 
 for job in "${jobs[@]}"; do
   ./scripts/doris-sql.sh -e "STOP ROUTINE LOAD FOR industrial_apm.${job};" >/dev/null 2>&1 || true

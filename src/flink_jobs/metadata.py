@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from typing import cast
+
 from src.telemetry_generator.config import build_tag_metadata
 from src.telemetry_generator.models import RawSensorEvent, TagMetadata
 from src.telemetry_generator.schema_validation import reject_entry
 
 
-def resolve_tag_metadata(raw_event: RawSensorEvent, mappings: dict[str, TagMetadata] | None = None) -> TagMetadata | None:
+def resolve_tag_metadata(
+    raw_event: RawSensorEvent, mappings: dict[str, TagMetadata] | None = None
+) -> TagMetadata | None:
     tag_id = raw_event["tag_id"]
     available = mappings if mappings is not None else build_tag_metadata()
     metadata = available.get(tag_id)
@@ -21,12 +25,14 @@ def resolve_tag_metadata(raw_event: RawSensorEvent, mappings: dict[str, TagMetad
 def enrich_raw_event(raw_event: RawSensorEvent, mappings: dict[str, TagMetadata] | None = None) -> dict[str, object]:
     available = mappings if mappings is not None else build_tag_metadata()
     metadata = available.get(raw_event["tag_id"])
+    dlq_input = cast("dict[str, object]", cast(object, raw_event))
     if metadata is None:
-        return to_staging_dlq(raw_event, "missing_tag_metadata", "/tag_id", "No valid tag metadata mapping")
+        return to_staging_dlq(dlq_input, "missing_tag_metadata", "/tag_id", "No valid tag metadata mapping")
     if metadata["tenant_id"] != raw_event["tenant_id"]:
-        return to_staging_dlq(raw_event, "invalid_asset_tag_mapping", "/tenant_id", "Tag metadata tenant mismatch")
+        return to_staging_dlq(dlq_input, "invalid_asset_tag_mapping", "/tenant_id", "Tag metadata tenant mismatch")
     if metadata["unit"] != raw_event["unit"]:
-        return to_staging_dlq(raw_event, "invalid_tag_mapping", "/unit", "Tag metadata unit mismatch")
+        return to_staging_dlq(dlq_input, "invalid_tag_mapping", "/unit", "Tag metadata unit mismatch")
+    scenario = raw_event.get("scenario", "")
     return {
         "event_id": raw_event["event_id"],
         "schema_version": "enriched_telemetry.v1",
@@ -44,7 +50,7 @@ def enrich_raw_event(raw_event: RawSensorEvent, mappings: dict[str, TagMetadata]
         "unit": raw_event["unit"],
         "source_system": raw_event["source_system"],
         "quality_flags": list(raw_event["quality_flags"]),
-        "scenario": raw_event["scenario"],
+        "scenario": scenario,
     }
 
 

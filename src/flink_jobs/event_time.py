@@ -34,4 +34,3 @@ def watermark_for(max_event_time: datetime) -> datetime:
 
 def is_beyond_allowed_lateness(event_time: datetime, watermark_time: datetime) -> bool:
     return event_time < watermark_time - allowed_lateness()
-

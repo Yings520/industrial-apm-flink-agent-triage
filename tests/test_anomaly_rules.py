@@ -49,7 +49,7 @@ def test_missing_heartbeat_detects_gap_with_evidence() -> None:
     assert anomaly["severity"] == "critical"
     assert anomaly["observed_value"] == 15
     assert anomaly["event_count"] == 2
-    assert len(anomaly["source_event_ids"]) <= 10
+    assert len(anomaly["source_event_ids"]) <= 10  # type: ignore[arg-type]  # pyright: ignore[reportArgumentType]
 
 
 def test_flatline_detects_repeated_values() -> None:

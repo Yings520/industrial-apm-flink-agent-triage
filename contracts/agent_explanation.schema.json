@@ -38,6 +38,23 @@
     "anomaly_id": {
       "type": "string"
     },
+    "asset_id": {
+      "type": "string"
+    },
+    "component_id": {
+      "type": "string"
+    },
+    "related_signals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "related_failure_modes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "suggested_action": {
+      "type": "string"
+    },
     "quality_event_ids": {
       "type": "array",
       "items": { "type": "string" },

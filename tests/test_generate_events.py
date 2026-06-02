@@ -1,10 +1,11 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import cast
 
 import pytest
 
+from src.telemetry_generator.config import build_tag_metadata
 from src.telemetry_generator.generate_events import _parse_utc, generate_events, write_profile_output
 
 
@@ -67,12 +68,13 @@ def test_demo_generation_covers_full_scale_and_scenarios() -> None:
         "flatline",
         "spike",
         "drift",
-    }.issubset({event["scenario"] for event in result.valid_events})
-    assert {event["scenario"] for event in result.invalid_events} == {"invalid_event"}
+    }.issubset({event.get("scenario", "") for event in result.valid_events})
+    assert {event.get("scenario", "") for event in result.invalid_events} == {"invalid_event"}
 
 
 def test_generation_uses_archetype_expected_metrics() -> None:
     result = generate_events(profile_name="demo", seed=42)
+    tag_metadata = build_tag_metadata()
 
     manufacturing_tags = {
         event["tag_id"]
@@ -81,14 +83,16 @@ def test_generation_uses_archetype_expected_metrics() -> None:
     }
 
     assert manufacturing_tags
-    assert all(tag.endswith(("temperature", "vibration", "power_draw")) for tag in manufacturing_tags)
+    assert {tag_metadata[tag]["metric_name"] for tag in manufacturing_tags}.issubset(
+        {"temperature", "vibration", "power_draw"}
+    )
 
 
 def test_missing_heartbeat_scenario_creates_event_time_gap() -> None:
     result = generate_events(profile_name="demo", seed=42)
     grouped_times: dict[tuple[object, object], list[str]] = {}
     for event in result.valid_events:
-        if event["scenario"] == "missing_heartbeat":
+        if event.get("scenario") == "missing_heartbeat":
             key = (event["tenant_id"], event["tag_id"])
             grouped_times.setdefault(key, []).append(event["event_time"])
 
@@ -106,7 +110,7 @@ def test_missing_heartbeat_scenario_creates_event_time_gap() -> None:
 
 def test_parse_utc_rejects_non_z_timestamp() -> None:
     with pytest.raises(ValueError, match="must end with Z"):
-        _parse_utc("2026-01-01T00:00:00")
+        _ = _parse_utc("2026-01-01T00:00:00")
 
 
 def test_generated_raw_tags_have_unique_tenant_mapping() -> None:
@@ -117,3 +121,32 @@ def test_generated_raw_tags_have_unique_tenant_mapping() -> None:
 
     assert tags_by_tenant
     assert all(len(tenants) == 1 for tenants in tags_by_tenant.values())
+
+
+def test_industrial_demo_generates_measurement_point_raw_events() -> None:
+    result = generate_events(profile_name="industrial_demo", seed=42)
+
+    first = result.valid_events[0]
+    metadata = first.get("synthetic_metadata")
+    assert metadata is not None, "industrial_demo events must have synthetic_metadata"
+    assert first["schema_version"] == "raw_sensor_event.v1"
+    assert "asset_id" not in first
+    assert isinstance(metadata, dict)
+    assert metadata["producer_mode"] == "backfill_replay"
+    assert str(metadata["measurement_point_id"]).startswith("mp_")
+    assert metadata["operating_state"] in {
+        "normal",
+        "degradation",
+        "warning",
+        "critical",
+        "maintenance",
+    }
+
+
+def test_industrial_demo_event_time_spans_30_days() -> None:
+    result = generate_events(profile_name="industrial_demo", seed=42)
+    event_times = [
+        datetime.fromisoformat(event["event_time"].replace("Z", "+00:00")) for event in result.valid_events
+    ]
+
+    assert max(event_times) - min(event_times) >= timedelta(days=29)

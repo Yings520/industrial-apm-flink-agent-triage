@@ -39,12 +39,16 @@ def describe_pipeline(tenant_id: str) -> dict[str, str]:
 
 def run_pyflink_pipeline(tenant_id: str, broker: str) -> None:
     try:
-        from pyflink.datastream import StreamExecutionEnvironment  # type: ignore[import-not-found]
-        from pyflink.common.watermark_strategy import WatermarkStrategy  # type: ignore[import-not-found]
+        from pyflink.common.watermark_strategy import (  # pyright: ignore[reportMissingImports]
+            WatermarkStrategy,  # type: ignore[import-not-found]
+        )
+        from pyflink.datastream import (  # pyright: ignore[reportMissingImports]
+            StreamExecutionEnvironment,  # type: ignore[import-not-found]
+        )
     except ImportError as exc:
         raise RuntimeError(
-            "PyFlink is not installed in this Python environment. Use the Docker Flink runtime or install PyFlink "
-            "compatible with the active Python version."
+            "PyFlink is not installed in this Python environment. "
+            + "Use the Docker Flink runtime or install PyFlink compatible with the active Python version."
         ) from exc
 
     _ = StreamExecutionEnvironment.get_execution_environment()

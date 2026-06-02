@@ -39,6 +39,7 @@ def build_triage_evidence(
         "tenant_id": tenant_id,
         "anomaly_id": anomaly["anomaly_id"],
         "asset_id": anomaly.get("asset_id"),
+        "component_id": anomaly.get("component_id"),
         "tag_id": anomaly.get("tag_id"),
         "metric_name": anomaly.get("metric_name"),
         "window_start": anomaly.get("window_start"),
@@ -51,9 +52,9 @@ def build_triage_evidence(
         "stream_health": sorted(stream_health, key=lambda row: str(row.get("job_name", ""))),
         "sensor_window": sorted(sensor_window, key=lambda row: str(row.get("event_time", ""))),
         "source_event_ids": source_event_ids,
-        "quality_event_ids": sorted(set(
-            str(q.get("quality_event_id")) for q in quality_events if q.get("quality_event_id")
-        )),
+        "quality_event_ids": sorted(
+            set(str(q.get("quality_event_id")) for q in quality_events if q.get("quality_event_id"))
+        ),
         "failure_mode_context": failure_mode,
         "work_order_context": work_order,
         "runbook_refs": sorted(runbook_refs, key=lambda row: (row.get("runbook_id", ""), row.get("section", ""))),
@@ -74,5 +75,5 @@ def _assert_tenant(tenant_id: str, row: dict[str, Any], label: str) -> None:
 
 
 def _evidence_id(tenant_id: str, anomaly_id: str, evidence_version: str) -> str:
-    digest = hashlib.sha1(f"{tenant_id}|{anomaly_id}|{evidence_version}".encode("utf-8")).hexdigest()[:16]
+    digest = hashlib.sha1(f"{tenant_id}|{anomaly_id}|{evidence_version}".encode()).hexdigest()[:16]
     return f"ev_{digest}"
