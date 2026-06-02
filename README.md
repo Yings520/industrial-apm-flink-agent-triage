@@ -406,30 +406,6 @@ All pipeline behavior is driven by YAML configs under `configs/`:
 
 ---
 
-## Testing
-
-```bash
-# Run all core tests (no Docker, no LLM required)
-make test
-
-# Run specific test files
-.venv/bin/python -m pytest tests/test_generate_events.py -v
-.venv/bin/python -m pytest tests/test_anomaly_rules.py -v
-.venv/bin/python -m pytest tests/test_flink_agent_diagnosis_generator.py -v
-
-# Run LLM-required tests (needs OPENAI_API_KEY in env)
-.venv/bin/python -m pytest -m llm -v
-```
-
-**Test categories (47 files):**
-- Generator: determinism, coverage, field validation, scenario contract
-- Schema: JSON Schema validation, DLQ routing, error classification
-- Anomaly rules: 5 detectors (threshold, z-score, drift, heartbeat, flatline)
-- Flink enrichment: metadata join, DLQ routing
-- Flink agents: consumer, context, evidence, diagnosis, output validation, E2E
-- ClickHouse: migration contract, Serving E2E, Grafana contract, claim boundary
-- Triage: recommendations, invocations, prompt guardrails, evidence, phase 4 E2E
-- E2E: Phase 1 ingestion, Phase 2 Flink agent, Phase 3 serving, Phase 4 incident workflow
 
 ---
 
