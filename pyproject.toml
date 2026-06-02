@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13,<3.16"
 dependencies = [
   "jsonschema>=4.25.0",
+  "kafka-python>=2.0",
   "PyYAML>=6.0.2",
 ]
 
