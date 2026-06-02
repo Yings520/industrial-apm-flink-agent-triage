@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/raw_sensor_event.schema.json",
+  "title": "raw_sensor_event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "schema_version",
+    "tenant_id",
+    "tag_id",
+    "tag_name",
+    "event_time",
+    "ingest_time",
+    "value",
+    "unit",
+    "source_system",
+    "quality_flags"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "raw_sensor_event.v1"
+    },
+    "tenant_id": {
+      "type": "string",
+      "pattern": "^tenant_[a-z0-9_]+$"
+    },
+    "tag_id": {
+      "type": "string",
+      "pattern": "^tag_[a-z0-9_]+$"
+    },
+    "tag_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "ingest_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "value": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string",
+      "enum": ["celsius", "mm_s", "bar", "m3_h", "kw", "ampere", "rpm", "db"]
+    },
+    "source_system": {
+      "type": "string",
+      "enum": ["opc_ua", "scada", "historian", "bms"]
+    },
+    "quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "scenario": {
+      "type": "string",
+      "description": "Synthetic/demo generation metadata. Expected absent in production events.",
+      "enum": [
+        "normal",
+        "late",
+        "missing_heartbeat",
+        "flatline",
+        "spike",
+        "drift",
+        "startup",
+        "steady_load",
+        "high_load",
+        "idle",
+        "warning",
+        "critical",
+        "degradation",
+        "failure",
+        "maintenance",
+        "shutdown",
+        "invalid_event"
+      ]
+    },
+    "synthetic_metadata": {
+      "type": "object",
+      "description": "Metadata for synthetic/generated data only. Not present in production events.",
+      "additionalProperties": true,
+      "properties": {
+        "generator_version": { "type": "string" },
+        "scenario": {
+          "type": "string",
+          "enum": [
+            "normal",
+            "late",
+            "missing_heartbeat",
+            "flatline",
+            "spike",
+            "drift",
+            "startup",
+            "steady_load",
+            "high_load",
+            "idle",
+            "warning",
+            "critical",
+            "degradation",
+            "failure",
+            "maintenance",
+            "shutdown",
+            "invalid_event"
+          ]
+        },
+        "seed_asset_index": { "type": "integer" }
+      }
+    }
+  }
+}

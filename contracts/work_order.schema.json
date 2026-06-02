@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/work_order.schema.json",
+  "title": "work_order",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "work_order_id",
+    "tenant_id",
+    "asset_id",
+    "work_type",
+    "priority",
+    "created_at",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "work_order.v1"
+    },
+    "work_order_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "component_id": {
+      "type": "string"
+    },
+    "failure_mode_id": {
+      "type": "string",
+      "description": "FMECA reference for this work order"
+    },
+    "anomaly_id": {
+      "type": "string",
+      "description": "Triggering anomaly if created from APM alert"
+    },
+    "incident_id": {
+      "type": "string",
+      "description": "Triggering incident if created from APM alert"
+    },
+    "work_type": {
+      "type": "string",
+      "enum": ["corrective", "preventive", "predictive", "inspection", "emergency", "calibration"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "emergency"]
+    },
+    "problem_code": {
+      "type": "string",
+      "description": "Standard problem classification code"
+    },
+    "cause_code": {
+      "type": "string",
+      "description": "Standard cause classification code"
+    },
+    "remedy_code": {
+      "type": "string",
+      "description": "Standard remedy classification code"
+    },
+    "technician_notes": {
+      "type": "string"
+    },
+    "downtime_minutes": {
+      "type": "number",
+      "minimum": 0
+    },
+    "parts_used": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "part_number": { "type": "string" },
+          "part_name": { "type": "string" },
+          "quantity": { "type": "integer" }
+        }
+      }
+    },
+    "inspection_results": {
+      "type": "object",
+      "description": "Structured inspection findings",
+      "properties": {
+        "inspection_type": {
+          "type": "string",
+          "enum": ["visual", "thermal", "vibration_analysis", "oil_analysis", "ultrasound", "ndt"]
+        },
+        "findings": { "type": "string" },
+        "severity": {
+          "type": "string",
+          "enum": ["normal", "degraded", "action_required", "critical"]
+        },
+        "measurements": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    },
+    "source_system": {
+      "type": "string",
+      "enum": ["cmms", "eam", "manual", "apm_triage"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["open", "in_progress", "pending_parts", "completed", "cancelled"]
+    }
+  }
+}

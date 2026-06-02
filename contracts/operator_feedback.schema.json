@@ -8,6 +8,7 @@
     "feedback_id",
     "schema_version",
     "tenant_id",
+    "incident_id",
     "anomaly_id",
     "operator_id",
     "is_true_positive",
@@ -26,6 +27,18 @@
     },
     "tenant_id": {
       "type": "string"
+    },
+    "incident_id": {
+      "type": "string",
+      "description": "The incident identity this feedback relates to."
+    },
+    "work_order_id": {
+      "type": "string",
+      "description": "Work order created from this feedback/incident"
+    },
+    "component_id": {
+      "type": "string",
+      "description": "Component that the feedback relates to"
     },
     "anomaly_id": {
       "type": "string"

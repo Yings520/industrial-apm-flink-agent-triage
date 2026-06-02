@@ -5,22 +5,27 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "explanation_id",
+    "recommendation_id",
     "schema_version",
     "tenant_id",
     "anomaly_id",
-    "evidence",
+    "evidence_version",
+    "summary",
+    "findings",
     "possible_causes",
     "recommended_checks",
-    "runbook_refs",
+    "runbook_references",
     "confidence_label",
+    "quality_caveats",
     "model_name",
     "prompt_version",
     "token_cost",
-    "latency_ms"
+    "latency_ms",
+    "created_at",
+    "status"
   ],
   "properties": {
-    "explanation_id": {
+    "recommendation_id": {
       "type": "string"
     },
     "schema_version": {
@@ -33,7 +38,45 @@
     "anomaly_id": {
       "type": "string"
     },
-    "evidence": {
+    "asset_id": {
+      "type": "string"
+    },
+    "component_id": {
+      "type": "string"
+    },
+    "related_signals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "related_failure_modes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "suggested_action": {
+      "type": "string"
+    },
+    "quality_event_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Quality event IDs that affect triage confidence"
+    },
+    "failure_mode_hypothesis": {
+      "type": "string",
+      "description": "Single best-match failure mode hypothesis from FMECA"
+    },
+    "failure_mode_hypothesis_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence score for the failure mode hypothesis"
+    },
+    "evidence_version": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "findings": {
       "type": "array",
       "items": {
         "type": "string"
@@ -51,7 +94,7 @@
         "type": "string"
       }
     },
-    "runbook_refs": {
+    "runbook_references": {
       "type": "array",
       "items": {
         "type": "string"
@@ -74,7 +117,21 @@
     "latency_ms": {
       "type": "integer",
       "minimum": 0
+    },
+    "quality_caveats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["fallback", "llm_generated", "quarantined"]
     }
   }
 }
-

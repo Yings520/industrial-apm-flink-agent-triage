@@ -1,0 +1,86 @@
+schema_version: components.v1
+description: Component catalog per asset archetype. Components are monitorable or maintainable parts of an asset.
+components_per_asset_default: 3
+archetype_components:
+  manufacturing_factory:
+    - component_type: motor
+      expected_metrics: [temperature, vibration]
+      criticality: high
+    - component_type: bearing
+      expected_metrics: [vibration]
+      criticality: high
+    - component_type: gearbox
+      expected_metrics: [temperature, vibration]
+      criticality: medium
+    - component_type: robot_joint
+      expected_metrics: [temperature, vibration, power_draw]
+      criticality: medium
+  chemical_plant:
+    - component_type: bearing
+      expected_metrics: [vibration]
+      criticality: critical
+    - component_type: seal
+      expected_metrics: [pressure, flow_rate]
+      criticality: critical
+    - component_type: heat_exchanger_bundle
+      expected_metrics: [temperature, pressure, flow_rate]
+      criticality: high
+    - component_type: compressor_stage
+      expected_metrics: [temperature, vibration, pressure]
+      criticality: critical
+  power_plant:
+    - component_type: turbine_blade
+      expected_metrics: [vibration, temperature]
+      criticality: critical
+    - component_type: bearing
+      expected_metrics: [vibration, temperature]
+      criticality: critical
+    - component_type: pump_impeller
+      expected_metrics: [flow_rate, vibration]
+      criticality: high
+  metallurgy_steel:
+    - component_type: furnace_burner
+      expected_metrics: [temperature, pressure]
+      criticality: critical
+    - component_type: rolling_mill_roll
+      expected_metrics: [vibration, temperature]
+      criticality: critical
+    - component_type: hydraulic_cylinder
+      expected_metrics: [pressure, flow_rate]
+      criticality: high
+  water_treatment_utilities:
+    - component_type: pump_impeller
+      expected_metrics: [flow_rate, vibration]
+      criticality: high
+    - component_type: membrane_module
+      expected_metrics: [pressure, flow_rate]
+      criticality: high
+    - component_type: aerator_diffuser
+      expected_metrics: [flow_rate, pressure]
+      criticality: medium
+    - component_type: valve_actuator
+      expected_metrics: [pressure]
+      criticality: medium
+  campus_facilities:
+    - component_type: chiller_compressor
+      expected_metrics: [temperature, pressure, power_draw]
+      criticality: high
+    - component_type: boiler_tube
+      expected_metrics: [temperature, pressure]
+      criticality: high
+    - component_type: air_handler_fan
+      expected_metrics: [flow_rate, vibration, power_draw]
+      criticality: medium
+  industrial_asset_management_generic:
+    - component_type: motor
+      expected_metrics: [temperature, vibration, power_draw]
+      criticality: medium
+    - component_type: bearing
+      expected_metrics: [vibration]
+      criticality: medium
+    - component_type: gearbox
+      expected_metrics: [temperature, vibration]
+      criticality: medium
+    - component_type: fan_impeller
+      expected_metrics: [vibration, flow_rate]
+      criticality: low

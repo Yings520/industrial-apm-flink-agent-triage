@@ -16,6 +16,7 @@ class ArchetypeConfig(TypedDict):
     units: list[str]
     threshold_profile_id: str
     plausible_scenarios: list[str]
+    components: NotRequired[list[AssetArchetypeComponents]]
 
 
 class PlantConfig(TypedDict):
@@ -36,6 +37,43 @@ class AssetConfig(TypedDict):
     metric_types: list[MetricConfig]
     archetypes: dict[str, ArchetypeConfig]
     tenants: list[TenantConfig]
+
+
+class TagMappingConfig(TypedDict):
+    schema_version: str
+    description: str
+    tag_id_pattern: str
+    tag_name_pattern: str
+    required_fields: list[str]
+
+
+class StreamingTopicConfig(TypedDict):
+    raw_sensor_events: str
+    raw_dlq: str
+    staging_telemetry_enriched: str
+    staging_dlq: str
+    mart_anomalies: str
+    mart_late_events: str
+    mart_stream_health: str
+    mart_realtime_diagnosis: str
+
+
+class StreamingFlinkConfig(TypedDict):
+    jobmanager_ui: str
+    watermark_delay_minutes: int
+    allowed_lateness_minutes: int
+
+
+class StreamingBrokerConfig(TypedDict):
+    bootstrap_servers: str
+    redpanda_admin: str
+
+
+class StreamingConfig(TypedDict):
+    schema_version: str
+    broker: StreamingBrokerConfig
+    flink: StreamingFlinkConfig
+    topics: StreamingTopicConfig
 
 
 class ScenarioTypeConfig(TypedDict):
@@ -62,20 +100,190 @@ class ScenarioConfig(TypedDict):
     profiles: dict[str, RawScenarioProfile]
 
 
-class SensorEvent(TypedDict):
+class RawSensorEvent(TypedDict):
     event_id: str
     schema_version: str
     tenant_id: str
-    plant_id: str
-    asset_id: str
-    metric_name: str
+    tag_id: str
+    tag_name: str
     event_time: str
     ingest_time: str
     value: float
     unit: str
     source_system: str
     quality_flags: list[str]
-    scenario: str
+    scenario: NotRequired[str]
+    synthetic_metadata: NotRequired[dict[str, object]]
+
+
+class SensorEvent(RawSensorEvent):
+    """Backward-compatible alias for Phase 1 imports."""
+
+
+class TagMetadata(TypedDict):
+    tenant_id: str
+    plant_id: str
+    asset_id: str
+    asset_name: str
+    asset_type: str
+    component_id: str
+    component_type: str
+    measurement_point_id: str
+    measurement_point: str
+    tag_id: str
+    tag_name: str
+    metric_name: str
+    unit: str
+    sampling_rate_hz: float
+    normal_range_min: float
+    normal_range_max: float
+    engineering_limit_min: float
+    engineering_limit_max: float
+    threshold_profile_id: str
+
+
+class MeasurementPointConfig(TypedDict):
+    component_type: str
+    measurement_point: str
+    metric_name: str
+    tag_suffix: str
+    unit: str
+    sampling_rate_hz: float
+    normal_range_min: float
+    normal_range_max: float
+    engineering_limit_min: float
+    engineering_limit_max: float
+
+
+class MeasurementPointCatalogConfig(TypedDict):
+    schema_version: str
+    asset_types: list[str]
+    measurement_points: dict[str, list[MeasurementPointConfig]]
+
+
+class MeasurementPointRecord(MeasurementPointConfig):
+    asset_type: str
+    measurement_point_id: str
+
+
+class ScenarioPhaseConfig(TypedDict):
+    state: str
+    start_day: int
+    end_day: int
+
+
+class FailureTimelineConfig(TypedDict):
+    asset_type: str
+    failure_mode_id: str
+    component_type: str
+    phases: list[ScenarioPhaseConfig]
+
+
+class SyntheticScenarioConfig(TypedDict):
+    schema_version: str
+    default_start_time: str
+    default_days: int
+    operating_states: list[str]
+    failure_timelines: dict[str, FailureTimelineConfig]
+
+
+class TelemetryWindow15m(TypedDict):
+    tenant_id: str
+    asset_id: str
+    component_id: str
+    measurement_point_id: str
+    tag_id: str
+    window_start: str
+    window_end: str
+    avg_value: float
+    min_value: float
+    max_value: float
+    stddev_value: float
+    p95_value: float
+    slope: float
+    z_score: float
+    event_count: int
+    expected_count: int
+    quality_flags: list[str]
+    operating_state: str
+    degradation_stage: str
+
+
+class ComponentConfig(TypedDict):
+    component_type: str
+    expected_metrics: list[str]
+    criticality: str
+
+
+class ComponentCatalogConfig(TypedDict):
+    schema_version: str
+    description: str
+    components_per_asset_default: int
+    archetype_components: dict[str, list[ComponentConfig]]
+
+
+class AssetArchetypeComponents(TypedDict):
+    component_type: str
+    count_per_asset: int
+
+
+class UpgradedArchetypeConfig(TypedDict):
+    asset_types: list[str]
+    expected_metrics: list[str]
+    units: list[str]
+    threshold_profile_id: str
+    plausible_scenarios: list[str]
+    components: list[AssetArchetypeComponents]
+
+
+class SensorTagConfig(TypedDict):
+    schema_version: str
+    tenant_id: str
+    tag_id: str
+    tag_name: str
+    plant_id: str
+    asset_id: str
+    component_id: str
+    metric_name: str
+    unit: str
+    source_system: str
+    signal_type: str
+    sampling_rate_hz: float
+    measurement_point: str
+    normal_range_min: float
+    normal_range_max: float
+    engineering_limit_min: float
+    engineering_limit_max: float
+    calibration_status: str
+    last_calibrated_at: str
+    quality_flags: list[str]
+    valid_from: str
+    valid_to: str | None
+    is_current: bool
+
+
+class ThresholdProfileConfig(TypedDict):
+    schema_version: str
+    profile_id: str
+    tenant_id: str
+    asset_type: str
+    component_type: str | None
+    metric_name: str
+    unit: str
+    rule_id: str
+    rule_name: str
+    method: str
+    severity: str
+    parameters: dict[str, object]
+    description: str
+    version: str
+    effective_from: str
+    effective_to: str | None
+    owner: str
+    approval_status: str
+    status: str
+    created_at: str
+    created_by: str
 
 
 @dataclass(frozen=True)
@@ -95,7 +303,7 @@ class ScenarioProfile:
 @dataclass(frozen=True)
 class GenerationResult:
     profile: ScenarioProfile
-    valid_events: list[SensorEvent]
+    valid_events: list[RawSensorEvent]
     invalid_events: list[dict[str, object]]
 
 

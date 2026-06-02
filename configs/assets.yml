@@ -1,6 +1,6 @@
 schema_version: asset_portfolio.v1
 plants_per_tenant: 3
-assets_per_plant: 20
+assets_per_plant: 10
 metric_types:
   - name: temperature
     unit: celsius
@@ -19,42 +19,99 @@ archetypes:
     units: [celsius, mm_s, kw]
     threshold_profile_id: threshold_manufacturing_rotating
     plausible_scenarios: [normal, late, flatline, spike, drift]
+    components:
+      - component_type: motor
+        count_per_asset: 2
+      - component_type: bearing
+        count_per_asset: 4
+      - component_type: gearbox
+        count_per_asset: 1
+      - component_type: robot_joint
+        count_per_asset: 3
   chemical_plant:
     asset_types: [reactor, pump, compressor, heat_exchanger]
     expected_metrics: [temperature, pressure, flow_rate, vibration]
     units: [celsius, bar, m3_h, mm_s]
     threshold_profile_id: threshold_chemical_process_safety
     plausible_scenarios: [normal, missing_heartbeat, flatline, spike, drift]
+    components:
+      - component_type: bearing
+        count_per_asset: 4
+      - component_type: seal
+        count_per_asset: 3
+      - component_type: heat_exchanger_bundle
+        count_per_asset: 1
+      - component_type: compressor_stage
+        count_per_asset: 2
   power_plant:
     asset_types: [turbine, generator, boiler_feed_pump, cooling_tower]
     expected_metrics: [temperature, vibration, pressure, power_draw]
     units: [celsius, mm_s, bar, kw]
     threshold_profile_id: threshold_power_critical
     plausible_scenarios: [normal, late, spike, drift, missing_heartbeat]
+    components:
+      - component_type: turbine_blade
+        count_per_asset: 4
+      - component_type: bearing
+        count_per_asset: 4
+      - component_type: pump_impeller
+        count_per_asset: 2
   metallurgy_steel:
     asset_types: [rolling_mill, furnace, caster, hydraulic_press]
     expected_metrics: [temperature, vibration, pressure, power_draw]
     units: [celsius, mm_s, bar, kw]
     threshold_profile_id: threshold_steel_high_heat
     plausible_scenarios: [normal, flatline, spike, drift, late]
+    components:
+      - component_type: furnace_burner
+        count_per_asset: 2
+      - component_type: rolling_mill_roll
+        count_per_asset: 3
+      - component_type: hydraulic_cylinder
+        count_per_asset: 2
   water_treatment_utilities:
     asset_types: [lift_pump, clarifier, aerator, membrane_unit]
     expected_metrics: [flow_rate, pressure, vibration, power_draw]
     units: [m3_h, bar, mm_s, kw]
     threshold_profile_id: threshold_water_flow_quality
     plausible_scenarios: [normal, missing_heartbeat, flatline, drift, late]
+    components:
+      - component_type: pump_impeller
+        count_per_asset: 2
+      - component_type: membrane_module
+        count_per_asset: 2
+      - component_type: aerator_diffuser
+        count_per_asset: 3
+      - component_type: valve_actuator
+        count_per_asset: 4
   campus_facilities:
     asset_types: [chiller, air_handler, boiler, elevator_drive]
     expected_metrics: [temperature, pressure, flow_rate, power_draw]
     units: [celsius, bar, m3_h, kw]
     threshold_profile_id: threshold_campus_bms
     plausible_scenarios: [normal, late, flatline, spike, invalid_event]
+    components:
+      - component_type: chiller_compressor
+        count_per_asset: 1
+      - component_type: boiler_tube
+        count_per_asset: 4
+      - component_type: air_handler_fan
+        count_per_asset: 2
   industrial_asset_management_generic:
     asset_types: [motor, gearbox, pump, fan]
     expected_metrics: [temperature, vibration, pressure, flow_rate, power_draw]
     units: [celsius, mm_s, bar, m3_h, kw]
     threshold_profile_id: threshold_generic_balanced
     plausible_scenarios: [normal, late, missing_heartbeat, flatline, spike, drift]
+    components:
+      - component_type: motor
+        count_per_asset: 2
+      - component_type: bearing
+        count_per_asset: 4
+      - component_type: gearbox
+        count_per_asset: 1
+      - component_type: fan_impeller
+        count_per_asset: 2
 tenants:
   - tenant_id: tenant_northwind
     plants:

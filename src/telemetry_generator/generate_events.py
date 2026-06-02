@@ -4,21 +4,30 @@ import argparse
 import hashlib
 import json
 import random
+from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from src.telemetry_generator.config import load_asset_config, load_scenario_config
+from src.telemetry_generator.config import (
+    build_asset_id,
+    build_tag_id,
+    build_tag_metadata,
+    load_asset_config,
+    load_scenario_config,
+)
 from src.telemetry_generator.models import (
     ArchetypeConfig,
     AssetConfig,
     GenerationResult,
     OutputPaths,
-    SensorEvent,
+    RawSensorEvent,
+    ScenarioProfile,
     TenantConfig,
 )
 from src.telemetry_generator.scenarios import load_scenarios, resolve_profile
+from src.telemetry_generator.signal_profiles import OperatingState, SignalContext, signal_value
 
 BASE_VALUES = {
     "temperature": 68.0,
@@ -122,6 +131,112 @@ def _event_times(start: datetime, ordinal: int, scenario_name: str, period: int)
     return _format_utc(event_dt), _format_utc(ingest_dt)
 
 
+def _industrial_state(day: int) -> tuple[OperatingState, str]:
+    if day < 10:
+        return OperatingState.NORMAL, "baseline"
+    if day < 22:
+        return OperatingState.DEGRADATION, "early_degradation"
+    if day < 26:
+        return OperatingState.WARNING, "warning"
+    if day < 28:
+        return OperatingState.CRITICAL, "critical"
+    if day < 29:
+        return OperatingState.MAINTENANCE, "maintenance"
+    return OperatingState.NORMAL, "recovery"
+
+
+def _failure_mode_for_metric(metric_name: str) -> str:
+    if metric_name == "flow_rate":
+        return "fm_pump_cavitation"
+    if metric_name == "pressure":
+        return "fm_seal_leakage"
+    if metric_name == "temperature":
+        return "fm_motor_winding_overheat"
+    return "fm_bearing_inner_race_wear"
+
+
+def generate_industrial_events(seed: int) -> GenerationResult:
+    all_tags = list(build_tag_metadata().values())
+    if not all_tags:
+        raise RuntimeError("build_tag_metadata returned zero tags")
+    start = _parse_utc("2026-01-01T00:00:00Z")
+    events: list[RawSensorEvent] = []
+
+    for _tag_index, metadata in enumerate(all_tags):
+        failure_mode_id = _failure_mode_for_metric(metadata["metric_name"])
+        scenario_end = start + timedelta(days=30)
+        for hour_offset in range(30 * 24):
+            timestamp = start + timedelta(hours=hour_offset)
+            day = hour_offset // 24
+            operating_state, _degradation_stage = _industrial_state(day)
+            context = SignalContext(
+                metric_name=metadata["metric_name"],
+                normal_min=metadata["normal_range_min"],
+                normal_max=metadata["normal_range_max"],
+                engineering_min=metadata["engineering_limit_min"],
+                engineering_max=metadata["engineering_limit_max"],
+                failure_mode_id=failure_mode_id,
+                operating_state=operating_state,
+                scenario_start=start,
+                scenario_end=scenario_end,
+                seed=f"{seed}|{metadata['asset_id']}|{metadata['tag_id']}",
+            )
+            event_time = _format_utc(timestamp)
+            quality_flags: list[str] = []
+            if operating_state in {OperatingState.WARNING, OperatingState.CRITICAL}:
+                quality_flags.append("threshold_breach")
+            if operating_state == OperatingState.DEGRADATION:
+                quality_flags.append("degraded_signal")
+            event_id = _stable_event_id(
+                [
+                    "industrial_demo",
+                    str(seed),
+                    metadata["tenant_id"],
+                    metadata["tag_id"],
+                    str(hour_offset),
+                ]
+            )
+            events.append(
+                RawSensorEvent(
+                    event_id=event_id,
+                    schema_version="raw_sensor_event.v1",
+                    tenant_id=metadata["tenant_id"],
+                    tag_id=metadata["tag_id"],
+                    tag_name=metadata["tag_name"],
+                    event_time=event_time,
+                    ingest_time=event_time,
+                    value=signal_value(context, timestamp),
+                    unit=metadata["unit"],
+                    source_system="historian",
+                    quality_flags=quality_flags,
+                    scenario=operating_state.value,
+                    synthetic_metadata={
+                        "generator_version": "2.0",
+                        "producer_mode": "backfill_replay",
+                        "original_sampling_rate_hz": 1.0,
+                        "replay_acceleration": 900,
+                        "operating_state": operating_state.value,
+                    },
+                )
+            )
+
+    tenants = sorted({metadata["tenant_id"] for metadata in all_tags})
+    plants = sorted({metadata["plant_id"] for metadata in all_tags})
+    profile = ScenarioProfile(
+        name="industrial_demo",
+        tenant_count=len(tenants),
+        plants_per_tenant=len(plants) // max(len(tenants), 1),
+        assets_per_plant=10,
+        total_assets=len(tenants) * 3 * 10,
+        metric_types=sorted({metadata["metric_name"] for metadata in all_tags}),
+        anomaly_scenarios=["degradation", "warning", "critical", "maintenance"],
+        scenarios=["normal", "degradation", "warning", "critical", "maintenance"],
+        start_time="2026-01-01T00:00:00Z",
+        periods_per_metric=30 * 24,
+    )
+    return GenerationResult(profile=profile, valid_events=events, invalid_events=[])
+
+
 def _valid_scenarios_for_archetype(
     profile_scenarios: list[str],
     archetype_config: ArchetypeConfig,
@@ -131,15 +246,19 @@ def _valid_scenarios_for_archetype(
 
 
 def generate_events(profile_name: str, seed: int) -> GenerationResult:
+    if profile_name == "industrial_demo":
+        return generate_industrial_events(seed)
+
     scenario_config = load_scenario_config()
     asset_config = load_asset_config()
     scenario_inventory = load_scenarios()
     profile = resolve_profile(profile_name, scenario_config, asset_config)
     metric_units = _metric_units(asset_config)
+    tag_metadata_by_id = build_tag_metadata(asset_config)
     rng = random.Random(seed)
     start = _parse_utc(profile.start_time)
 
-    events: list[SensorEvent] = []
+    events: list[RawSensorEvent] = []
     invalid_events: list[dict[str, object]] = []
     ordinal = 0
 
@@ -156,10 +275,20 @@ def generate_events(profile_name: str, seed: int) -> GenerationResult:
                 valid_scenarios.insert(0, "normal")
 
             for asset_index in range(1, profile.assets_per_plant + 1):
-                asset_id = f"asset_{plant_id.removeprefix('plant_')}_{asset_index:04d}"
+                asset_id = build_asset_id(plant_id, asset_index)
                 asset_type = _asset_type(archetype_config, asset_index - 1)
                 threshold_profile_id = str(archetype_config["threshold_profile_id"])
-                for metric_index, metric_name in enumerate(metric_names):
+                asset_tags = [
+                    metadata
+                    for metadata in tag_metadata_by_id.values()
+                    if metadata["tenant_id"] == tenant_id
+                    and metadata["plant_id"] == plant_id
+                    and metadata["asset_id"] == asset_id
+                    and metadata["metric_name"] in metric_names
+                ]
+                for metric_index, tag_metadata in enumerate(asset_tags):
+                    metric_name = tag_metadata["metric_name"]
+                    tag_id = tag_metadata["tag_id"]
                     scenario_name = valid_scenarios[(asset_index + metric_index + seed) % len(valid_scenarios)]
                     for period in range(profile.periods_per_metric):
                         base = BASE_VALUES[metric_name] + (asset_index % 7) + metric_index
@@ -171,21 +300,19 @@ def generate_events(profile_name: str, seed: int) -> GenerationResult:
                                 profile.name,
                                 str(seed),
                                 tenant_id,
-                                plant_id,
-                                asset_id,
+                                tag_id,
                                 metric_name,
                                 scenario_name,
                                 str(period),
                             ]
                         )
                         events.append(
-                            SensorEvent(
+                            RawSensorEvent(
                                 event_id=event_id,
-                                schema_version="sensor_event.v1",
+                                schema_version="raw_sensor_event.v1",
                                 tenant_id=tenant_id,
-                                plant_id=plant_id,
-                                asset_id=asset_id,
-                                metric_name=metric_name,
+                                tag_id=tag_id,
+                                tag_name=tag_metadata["tag_name"],
                                 event_time=event_time,
                                 ingest_time=ingest_time,
                                 value=value,
@@ -193,6 +320,11 @@ def generate_events(profile_name: str, seed: int) -> GenerationResult:
                                 source_system=source_system,
                                 quality_flags=quality_flags,
                                 scenario=scenario_name,
+                                synthetic_metadata={
+                                    "generator_version": "1.0",
+                                    "scenario": scenario_name,
+                                    "seed_asset_index": asset_index,
+                                },
                             )
                         )
                         ordinal += 1
@@ -201,19 +333,64 @@ def generate_events(profile_name: str, seed: int) -> GenerationResult:
                     invalid_events.append(
                         {
                             "event_id": _stable_event_id(
-                                [profile.name, str(seed), tenant_id, plant_id, asset_id, "invalid"]
+                                [profile.name, str(seed), tenant_id, plant_id, asset_id, "invalid_missing_value"]
                             ),
-                            "schema_version": "sensor_event.v0",
+                            "schema_version": "raw_sensor_event.v1",
                             "tenant_id": tenant_id,
-                            "plant_id": plant_id,
-                            "asset_id": asset_id,
-                            "metric_name": "temperature",
+                            "tag_id": build_tag_id(plant_id, asset_index, "temperature"),
+                            "tag_name": f"{asset_type}_temperature_{asset_index:04d}",
                             "event_time": _format_utc(start),
                             "ingest_time": _format_utc(start),
                             "unit": "celsius",
                             "source_system": source_system,
+                            "quality_flags": ["missing_required_field"],
+                            "scenario": "invalid_event",
+                            "violation_type": "missing_field",
+                            "violation_detail": "Missing required field: value",
+                            "asset_type": asset_type,
+                            "threshold_profile_id": threshold_profile_id,
+                        }
+                    )
+                    invalid_events.append(
+                        {
+                            "event_id": _stable_event_id(
+                                [profile.name, str(seed), tenant_id, plant_id, asset_id, "invalid_unit"]
+                            ),
+                            "schema_version": "raw_sensor_event.v1",
+                            "tenant_id": tenant_id,
+                            "tag_id": build_tag_id(plant_id, asset_index, "temperature"),
+                            "tag_name": f"{asset_type}_temperature_{asset_index:04d}",
+                            "event_time": _format_utc(start),
+                            "ingest_time": _format_utc(start),
+                            "value": round(BASE_VALUES["temperature"] + (asset_index % 7), 3),
+                            "unit": "bananas",
+                            "source_system": source_system,
+                            "quality_flags": ["invalid_unit"],
+                            "scenario": "invalid_event",
+                            "violation_type": "unit_anomaly",
+                            "violation_detail": "Invalid unit: bananas",
+                            "asset_type": asset_type,
+                            "threshold_profile_id": threshold_profile_id,
+                        }
+                    )
+                    invalid_events.append(
+                        {
+                            "event_id": _stable_event_id(
+                                [profile.name, str(seed), tenant_id, plant_id, asset_id, "invalid_contract"]
+                            ),
+                            "schema_version": "raw_sensor_event.v99",
+                            "tenant_id": tenant_id,
+                            "tag_id": build_tag_id(plant_id, asset_index, "temperature"),
+                            "tag_name": f"{asset_type}_temperature_{asset_index:04d}",
+                            "event_time": _format_utc(start),
+                            "ingest_time": _format_utc(start),
+                            "value": round(BASE_VALUES["temperature"] + (asset_index % 7), 3),
+                            "unit": "celsius",
+                            "source_system": source_system,
                             "quality_flags": ["invalid_contract"],
                             "scenario": "invalid_event",
+                            "violation_type": "contract_violation",
+                            "violation_detail": "Invalid schema_version: raw_sensor_event.v99",
                             "asset_type": asset_type,
                             "threshold_profile_id": threshold_profile_id,
                         }
@@ -232,8 +409,8 @@ def _write_jsonl(path: Path, records: Iterable[Mapping[str, object]]) -> None:
 def write_profile_output(result: GenerationResult, output_dir: Path) -> OutputPaths:
     generated_dir = output_dir / "generated"
     generated_dir.mkdir(parents=True, exist_ok=True)
-    valid_events_path = generated_dir / f"sensor_events_{result.profile.name}.jsonl"
-    invalid_events_path = generated_dir / f"invalid_events_{result.profile.name}.jsonl"
+    valid_events_path = generated_dir / f"raw_sensor_events_{result.profile.name}.jsonl"
+    invalid_events_path = generated_dir / f"raw_sensor_events_invalid_{result.profile.name}.jsonl"
     _write_jsonl(valid_events_path, list(result.valid_events))
     _write_jsonl(invalid_events_path, result.invalid_events)
     return OutputPaths(valid_events_path=valid_events_path, invalid_events_path=invalid_events_path)
@@ -241,7 +418,7 @@ def write_profile_output(result: GenerationResult, output_dir: Path) -> OutputPa
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate deterministic industrial telemetry JSONL.")
-    _ = parser.add_argument("--profile", choices=["smoke", "demo"], default="smoke")
+    _ = parser.add_argument("--profile", choices=["smoke", "demo", "industrial_demo"], default="smoke")
     _ = parser.add_argument("--seed", type=int, default=42)
     _ = parser.add_argument("--output-dir", type=Path, default=Path("data"))
     return parser
@@ -253,12 +430,66 @@ def _parse_args(argv: list[str] | None) -> GenerateCliArgs:
     return GenerateCliArgs(profile=namespace.profile, seed=namespace.seed, output_dir=namespace.output_dir)
 
 
+def _write_summary(result: GenerationResult, _output_dir: Path) -> Path:
+    from src.telemetry_generator.config import REPO_ROOT, build_tag_metadata, load_asset_config
+
+    reports_dir = REPO_ROOT / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    tag_meta = build_tag_metadata(load_asset_config())
+    tag_to_metric: dict[str, str] = {tid: meta["metric_name"] for tid, meta in tag_meta.items()}
+
+    by_scenario: Counter[str] = Counter()
+    by_tenant: Counter[str] = Counter()
+    by_metric: Counter[str] = Counter()
+    all_times: list[str] = []
+
+    for ev in result.valid_events:
+        by_scenario[str(ev.get("scenario", "unknown"))] += 1
+        by_tenant[str(ev["tenant_id"])] += 1
+        by_metric[tag_to_metric.get(str(ev["tag_id"]), "unknown")] += 1
+        all_times.append(str(ev["event_time"]))
+
+    for ev in result.invalid_events:
+        by_scenario[str(ev.get("scenario", "unknown"))] += 1
+        tenant = str(ev.get("tenant_id", "unknown"))
+        by_tenant[tenant] += 1
+        tid = str(ev.get("tag_id", ""))
+        metric = tag_to_metric.get(tid, "unknown")
+        if metric == "unknown":
+            parts = tid.split("_")
+            if len(parts) >= 2 and parts[0] == "tag":
+                metric = parts[-1]
+        by_metric[metric] += 1
+        all_times.append(str(ev.get("event_time", "")))
+
+    time_start = min(all_times) if all_times else ""
+    time_end = max(all_times) if all_times else ""
+
+    summary: dict[str, object] = {
+        "total_events": len(result.valid_events) + len(result.invalid_events),
+        "valid_events": len(result.valid_events),
+        "invalid_events": len(result.invalid_events),
+        "by_scenario": dict(by_scenario),
+        "by_tenant": dict(by_tenant),
+        "by_metric": dict(by_metric),
+        "time_range": {"start": time_start, "end": time_end},
+    }
+
+    summary_path = reports_dir / "phase1-historian-generation-summary.json"
+    with summary_path.open("w", encoding="utf-8") as handle:
+        json.dump(summary, handle, indent=2, ensure_ascii=False)
+    return summary_path
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     result = generate_events(profile_name=args.profile, seed=args.seed)
     paths = write_profile_output(result, args.output_dir)
     print(f"wrote {len(result.valid_events)} valid events to {paths.valid_events_path}")
     print(f"wrote {len(result.invalid_events)} invalid candidate events to {paths.invalid_events_path}")
+    summary_path = _write_summary(result, args.output_dir)
+    print(f"wrote generation summary to {summary_path}")
     return 0
 
 

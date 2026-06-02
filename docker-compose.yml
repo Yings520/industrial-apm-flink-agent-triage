@@ -1,0 +1,239 @@
+services:
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.9
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp=1
+      - --memory=1G
+      - --reserve-memory=0M
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:19092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:19092,OUTSIDE://localhost:19092
+      - --rpc-addr=0.0.0.0:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --pandaproxy-addr=0.0.0.0:18082
+      - --advertise-pandaproxy-addr=localhost:18082
+    ports:
+      - "19092:19092"
+      - "19644:9644"
+      - "18082:18082"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "rpk -X brokers=localhost:19092 cluster health | grep -q Healthy",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v2.8.5
+    depends_on:
+      redpanda:
+        condition: service_started
+    ports:
+      - "18080:8080"
+    environment:
+      - KAFKA_BROKERS=redpanda:19092
+
+  flink-jobmanager:
+    image: flink:1.19-scala_2.12-java17
+    command: jobmanager
+    ports:
+      - "18081:8081"
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+      FLINK_PROPERTIES: |
+        jobmanager.memory.process.size: 1600m
+    volumes:
+      - ./flink/lib:/opt/flink/usrlib:ro
+      - ./sql:/opt/flink/sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/overview >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  flink-taskmanager:
+    image: flink:1.19-scala_2.12-java17
+    command: taskmanager
+    depends_on:
+      flink-jobmanager:
+        condition: service_started
+    environment:
+      JOB_MANAGER_RPC_ADDRESS: flink-jobmanager
+      TASK_MANAGER_NUMBER_OF_TASK_SLOTS: 36
+      FLINK_ENV_JAVA_OPTS: -XX:MaxMetaspaceSize=768m -XX:ReservedCodeCacheSize=256m
+      FLINK_PROPERTIES: |
+        taskmanager.numberOfTaskSlots: 36
+        taskmanager.memory.process.size: 4096m
+        taskmanager.memory.jvm-metaspace.size: 768m
+        taskmanager.memory.jvm-overhead.min: 512m
+        taskmanager.memory.jvm-overhead.max: 1024m
+    volumes:
+      - ./flink/lib:/opt/flink/usrlib:ro
+      - ./sql:/opt/flink/sql:ro
+
+  postgres:
+    image: postgres:16-alpine
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=1
+      - -c
+      - max_wal_senders=1
+    environment:
+      - POSTGRES_DB=apm_metadata
+      - POSTGRES_USER=apm
+      - POSTGRES_PASSWORD=apm_secret
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./sql/postgres_init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apm -d apm_metadata"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  kafka-connect:
+    image: debezium/connect:2.7.1.Final
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redpanda:
+        condition: service_healthy
+    ports:
+      - "18083:8083"
+    environment:
+      - BOOTSTRAP_SERVERS=redpanda:19092
+      - GROUP_ID=debezium-connect
+      - CONFIG_STORAGE_TOPIC=debezium_connect_configs
+      - OFFSET_STORAGE_TOPIC=debezium_connect_offsets
+      - STATUS_STORAGE_TOPIC=debezium_connect_statuses
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE=false
+      - CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE=false
+      - CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/ >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  grafana:
+    build:
+      context: .
+      dockerfile: docker/grafana.Dockerfile
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "13000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=apm_demo
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Editor
+    volumes:
+      - ./configs/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./configs/grafana/dashboards/apm-overview-ch.json:/etc/grafana/dashboards/apm-overview-ch.json:ro
+      - ./configs/grafana/dashboards/apm-asset-health-ch.json:/etc/grafana/dashboards/apm-asset-health-ch.json:ro
+      - ./configs/grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/default.yml:ro
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health | grep -q ok"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.12-alpine
+    ports:
+      - "18123:8123"
+      - "19000:9000"
+    environment:
+      - CLICKHOUSE_DB=industrial_apm
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_PASSWORD=clickhouse_secret
+    volumes:
+      - ./sql:/opt/clickhouse/sql:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "clickhouse-client --host 127.0.0.1 --port 9000 --user default --password clickhouse_secret --query 'SELECT 1' >/dev/null",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  x-flink-agent-base: &flink-agent-base
+    image: python:3.13-slim
+    volumes:
+      - ./src:/app/src:ro
+      - ./configs:/app/configs:ro
+      - ./contracts:/app/contracts:ro
+      - ./.env:/app/.env:ro
+    working_dir: /app
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      flink-jobmanager:
+        condition: service_started
+    restart: unless-stopped
+
+  flink-agent-1:
+    <<: *flink-agent-base
+    command: >
+      sh -c "
+      pip install -q kafka-python jsonschema PyYAML &&
+      python -m src.flink_agents.realtime_diagnosis_agent
+      --tenant all --broker redpanda:19092 --use-llm --workers 4
+      "
+
+  flink-agent-2:
+    <<: *flink-agent-base
+    command: >
+      sh -c "
+      pip install -q kafka-python jsonschema PyYAML &&
+      python -m src.flink_agents.realtime_diagnosis_agent
+      --tenant all --broker redpanda:19092 --use-llm --workers 4
+      "
+
+  flink-agent-3:
+    <<: *flink-agent-base
+    command: >
+      sh -c "
+      pip install -q kafka-python jsonschema PyYAML &&
+      python -m src.flink_agents.realtime_diagnosis_agent
+      --tenant all --broker redpanda:19092 --use-llm --workers 4
+      "
+
+  data-pump:
+    image: python:3.13-slim
+    command: >
+      sh -c "
+      pip install -q kafka-python jsonschema PyYAML &&
+      python /app/scripts/e2e_data_pump.py --broker redpanda:19092 --interval 1.0
+      "
+    volumes:
+      - ./src:/app/src:ro
+      - ./configs:/app/configs:ro
+      - ./contracts:/app/contracts:ro
+      - ./scripts:/app/scripts:ro
+    working_dir: /app
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      flink-agent-1:
+        condition: service_started
+    restart: unless-stopped

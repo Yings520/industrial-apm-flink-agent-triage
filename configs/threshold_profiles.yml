@@ -1,0 +1,111 @@
+schema_version: threshold_profiles.v1
+description: Threshold profile catalog for loading dim_threshold_profile in Doris. One-to-one with anomaly_rules.yml profiles.
+profiles:
+  - profile_id: thr_manufacturing_rotating_temp
+    tenant_id: "*"
+    asset_type: cnc_machine
+    component_type: motor
+    metric_name: temperature
+    unit: celsius
+    rule_id: threshold_spike
+    rule_name: "CNC Motor Temperature Spike"
+    method: static_threshold
+    severity: critical
+    parameters: {multiplier: 2.5, baseline_window_points: 24}
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    owner: reliability_engineering
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
+  - profile_id: thr_manufacturing_rotating_vib
+    tenant_id: "*"
+    asset_type: conveyor
+    component_type: bearing
+    metric_name: vibration
+    unit: mm_s
+    rule_id: rolling_zscore
+    rule_name: "Conveyor Bearing Vibration Z-Score"
+    method: rolling_baseline_zscore
+    severity: warning
+    parameters: {window_points: 24, zscore_threshold: 3.0}
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    owner: reliability_engineering
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
+  - profile_id: thr_chemical_process_pressure
+    tenant_id: "*"
+    asset_type: reactor
+    component_type: seal
+    metric_name: pressure
+    unit: bar
+    rule_id: drift_rate_of_change
+    rule_name: "Reactor Pressure Drift Detection"
+    method: slope_over_window
+    severity: warning
+    parameters: {window_points: 36, max_slope_per_hour: 0.8}
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    owner: process_safety
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
+  - profile_id: thr_power_critical_vib
+    tenant_id: "*"
+    asset_type: turbine
+    component_type: turbine_blade
+    metric_name: vibration
+    unit: mm_s
+    rule_id: threshold_spike
+    rule_name: "Turbine Vibration Spike"
+    method: static_threshold
+    severity: critical
+    parameters: {multiplier: 2.0, baseline_window_points: 48}
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    owner: reliability_engineering
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
+  - profile_id: thr_water_treatment_flow
+    tenant_id: "*"
+    asset_type: lift_pump
+    component_type: pump_impeller
+    metric_name: flow_rate
+    unit: m3_h
+    rule_id: missing_heartbeat
+    rule_name: "Pump Missing Heartbeat Detection"
+    method: heartbeat_gap
+    severity: critical
+    parameters: {max_gap_minutes: 10}
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    owner: water_ops
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
+  - profile_id: thr_generic_balanced_flatline
+    tenant_id: "*"
+    asset_type: motor
+    component_type: motor
+    metric_name: temperature
+    unit: celsius
+    rule_id: flatline
+    rule_name: "Motor Temperature Flatline"
+    method: repeated_value_window
+    severity: warning
+    parameters: {min_repeated_points: 6}
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    owner: reliability_engineering
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system

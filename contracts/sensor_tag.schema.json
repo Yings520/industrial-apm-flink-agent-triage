@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/sensor_tag.schema.json",
+  "title": "sensor_tag",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "tag_id",
+    "tag_name",
+    "asset_id",
+    "metric_name",
+    "unit",
+    "source_system",
+    "signal_type",
+    "sampling_rate_hz",
+    "quality_flags"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "sensor_tag.v1"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "tag_id": {
+      "type": "string",
+      "pattern": "^tag_[a-z0-9_]+$"
+    },
+    "tag_name": {
+      "type": "string"
+    },
+    "plant_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string",
+      "pattern": "^asset_[a-z0-9_]+$"
+    },
+    "component_id": {
+      "type": "string"
+    },
+    "metric_name": {
+      "type": "string",
+      "enum": ["temperature", "vibration", "pressure", "flow_rate", "power_draw"]
+    },
+    "unit": {
+      "type": "string",
+      "enum": ["celsius", "mm_s", "bar", "m3_h", "kw"]
+    },
+    "source_system": {
+      "type": "string",
+      "enum": ["opc_ua", "scada", "historian", "bms"]
+    },
+    "signal_type": {
+      "type": "string",
+      "enum": ["analog", "digital", "accumulator", "waveform", "spectrum", "event"]
+    },
+    "sampling_rate_hz": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Nominal sampling frequency in Hz. 0 = event-driven."
+    },
+    "measurement_point": {
+      "type": "string",
+      "description": "Physical measurement point identifier (e.g. 'bearing_drive_end_x')"
+    },
+    "normal_range_min": {
+      "type": "number"
+    },
+    "normal_range_max": {
+      "type": "number"
+    },
+    "engineering_limit_min": {
+      "type": "number",
+      "description": "Beyond this value the sensor may be damaged or reading invalid"
+    },
+    "engineering_limit_max": {
+      "type": "number"
+    },
+    "calibration_status": {
+      "type": "string",
+      "enum": ["calibrated", "due", "overdue", "not_applicable"]
+    },
+    "last_calibrated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "quality_flags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_to": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_current": {
+      "type": "boolean"
+    }
+  }
+}

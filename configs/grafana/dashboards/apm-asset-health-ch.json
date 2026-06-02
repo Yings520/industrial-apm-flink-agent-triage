@@ -1,0 +1,1361 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Asset Profile",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "title": "Asset Info",
+      "type": "table",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 5,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false,
+            "minWidth": 70,
+            "width": 115
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT asset_name AS asset, asset_type AS type, lifecycle_state AS state, criticality FROM industrial_apm.dim_apm_assets WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' AND is_current = 1 ORDER BY valid_from DESC LIMIT 1",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Current Condition",
+      "type": "table",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 5,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false,
+            "minWidth": 70,
+            "width": 115
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT condition_status AS status, formatDateTime(last_anomaly_time, '%F %T') AS last_anomaly FROM industrial_apm.ads_apm_asset_condition_snapshot WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' ORDER BY snapshot_time DESC LIMIT 1",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Anomaly Count (24h)",
+      "type": "stat",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 1,
+        "w": 3,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 20
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT COUNT(DISTINCT anomaly_id) AS value FROM industrial_apm.ads_apm_anomaly_event_realtime WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' AND window_start >= now() - INTERVAL 24 HOUR",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Diagnosis Count (24h)",
+      "type": "stat",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 3,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 15
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT SUM(diagnosis_count_24h) AS value FROM industrial_apm.ads_apm_diagnosis_kpi_snapshot WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}'",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Open Workorders",
+      "type": "stat",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 1,
+        "w": 3,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 3
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT SUM(open_workorder_count) AS value FROM industrial_apm.ads_apm_failure_evidence_summary WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}'",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Asset Details Table",
+      "type": "table",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false,
+            "minWidth": 80,
+            "width": 130
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "component_id",
+            "desc": false
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT component_type AS type, component_name AS name, ifNull(nullIf(criticality, ''), 'unknown') AS criticality FROM industrial_apm.dim_apm_asset_components WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' ORDER BY component_id LIMIT 100",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Signal Trend",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "title": "Signal Trend by Tag",
+      "type": "timeseries",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 16,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": 3600000,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "min",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "time_series",
+          "refId": "A",
+          "query": "SELECT bucket_minute AS time, concat(tag_id, '::', metric_name) AS metric, avg_value AS value FROM industrial_apm.ads_apm_tag_signal_timeseries_1m WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' AND ('${tag_id}' = 'All' OR tag_id = '${tag_id}') AND bucket_minute >= toDateTime(intDiv(${__from}, 1000)) AND bucket_minute <= toDateTime(intDiv(${__to}, 1000)) ORDER BY bucket_minute",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Signal Stats Table",
+      "type": "table",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 6,
+        "w": 8,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false,
+            "minWidth": 70,
+            "width": 105
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "flatline_buckets"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "late_buckets"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "total_events",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT tag_id, metric_name, AVG(avg_value) AS avg_signal, MAX(max_value) AS max_signal, MIN(min_value) AS min_signal, argMax(last_value, bucket_minute) AS latest_value, SUM(event_count) AS total_events, SUM(CASE WHEN has_late_arrival = 1 THEN 1 ELSE 0 END) AS late_buckets, SUM(CASE WHEN has_flatline = 1 THEN 1 ELSE 0 END) AS flatline_buckets, SUM(CASE WHEN has_missing_heartbeat = 1 THEN 1 ELSE 0 END) AS missing_heartbeat_buckets FROM industrial_apm.ads_apm_tag_signal_timeseries_1m WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' AND ('${tag_id}' = 'All' OR tag_id = '${tag_id}') AND bucket_minute >= toDateTime(intDiv(${__from}, 1000)) AND bucket_minute <= toDateTime(intDiv(${__to}, 1000)) GROUP BY tag_id, metric_name ORDER BY total_events DESC LIMIT 20",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "Recent Anomalies",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 12,
+      "title": "Anomaly Trend",
+      "type": "table",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false,
+            "minWidth": 80,
+            "width": 120
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT formatDateTime(window_start, '%F %T') AS anomaly_window_start, severity, toString(COUNT(DISTINCT anomaly_id)) AS anomaly_count FROM industrial_apm.ads_apm_anomaly_event_realtime WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' AND window_start >= toDateTime(intDiv(${__from}, 1000)) AND window_start <= toDateTime(intDiv(${__to}, 1000)) GROUP BY window_start, severity ORDER BY window_start",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Anomaly Events Table",
+      "type": "table",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 15,
+        "w": 16,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false,
+            "minWidth": 80,
+            "width": 120
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT formatDateTime(window_start, '%F %T') AS anomaly_window_start, severity, metric_name AS metric, rule_id AS rule, toString(observed_value) AS observed, toString(expected_value) AS expected, toString(detection_confidence) AS confidence, failure_mode_label AS evidence, if(has_related_workorder, 'yes', 'no') AS has_related_workorder, if(has_related_maintenance, 'yes', 'no') AS has_related_maintenance, tag_id FROM industrial_apm.ads_apm_anomaly_event_realtime WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' AND window_start >= toDateTime(intDiv(${__from}, 1000)) AND window_start <= toDateTime(intDiv(${__to}, 1000)) ORDER BY window_start DESC LIMIT 100",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "row",
+      "title": "Diagnosis & Evidence",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 15,
+      "title": "Diagnosis Count",
+      "type": "stat",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT SUM(diagnosis_count_24h) AS value FROM industrial_apm.ads_apm_diagnosis_kpi_snapshot WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}'",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "High Risk Count",
+      "type": "stat",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 23,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT SUM(high_risk_diagnosis_count_24h) AS value FROM industrial_apm.ads_apm_diagnosis_kpi_snapshot WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}'",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Avg Confidence",
+      "type": "gauge",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 23,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.5.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT AVG(avg_confidence_24h) * 100 AS avg_confidence_pct FROM industrial_apm.ads_apm_diagnosis_kpi_snapshot WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}'",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "title": "Escalation Required",
+      "type": "stat",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 23,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT SUM(escalation_required_count_24h) AS value FROM industrial_apm.ads_apm_diagnosis_kpi_snapshot WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}'",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "title": "Failure Evidence Table",
+      "type": "table",
+      "datasource": {
+        "type": "vertamedia-clickhouse-datasource",
+        "uid": "apm-clickhouse"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 24,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "inspect": false,
+            "minWidth": 80,
+            "width": 120
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "suspected_failure_count"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 2
+                    },
+                    {
+                      "color": "red",
+                      "value": 5
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "open_workorder_count"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "latest_failure_time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "latest_workorder_time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "latest_maintenance_time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "suspected_failure_count",
+            "desc": true
+          },
+          {
+            "displayName": "confirmed_failure_count",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "vertamedia-clickhouse-datasource",
+            "uid": "apm-clickhouse"
+          },
+          "format": "table",
+          "refId": "A",
+          "query": "SELECT component_id AS component, suspected_failure_count AS suspected, open_workorder_count AS open_wo, completed_workorder_count AS done_wo, maintenance_count AS maintenance, sensor_related_maintenance_count AS sensor_related, formatDateTime(latest_failure_time, '%F %T') AS latest_failure, formatDateTime(latest_workorder_time, '%F %T') AS latest_workorder, formatDateTime(latest_maintenance_time, '%F %T') AS latest_maintenance FROM industrial_apm.ads_apm_failure_evidence_summary WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' ORDER BY suspected_failure_count + confirmed_failure_count + open_workorder_count DESC LIMIT 50",
+          "editorMode": "sql",
+          "queryType": "sql"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "tags": [
+    "apm",
+    "asset",
+    "drilldown"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "tenant_northwind",
+          "value": "tenant_northwind"
+        },
+        "datasource": {
+          "type": "vertamedia-clickhouse-datasource",
+          "uid": "apm-clickhouse"
+        },
+        "definition": "SELECT DISTINCT tenant_id FROM industrial_apm.dim_apm_tenants ORDER BY tenant_id",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "tenant_id",
+        "options": [],
+        "query": "SELECT DISTINCT tenant_id FROM industrial_apm.dim_apm_tenants ORDER BY tenant_id",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query",
+        "editorMode": "sql",
+        "queryType": "sql"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "asset_northwind_mfg_01_0001",
+          "value": "asset_northwind_mfg_01_0001"
+        },
+        "datasource": {
+          "type": "vertamedia-clickhouse-datasource",
+          "uid": "apm-clickhouse"
+        },
+        "definition": "SELECT DISTINCT asset_id FROM industrial_apm.dim_apm_assets WHERE tenant_id = '${tenant_id}' ORDER BY asset_id",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "asset_id",
+        "options": [],
+        "query": "SELECT DISTINCT asset_id FROM industrial_apm.dim_apm_assets WHERE tenant_id = '${tenant_id}' ORDER BY asset_id",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query",
+        "editorMode": "sql",
+        "queryType": "sql"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "vertamedia-clickhouse-datasource",
+          "uid": "apm-clickhouse"
+        },
+        "definition": "SELECT DISTINCT tag_id FROM (SELECT tag_id FROM industrial_apm.dim_apm_signal_tags_mapping WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' UNION DISTINCT SELECT tag_id FROM industrial_apm.ads_apm_tag_signal_timeseries_1m WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}') ORDER BY tag_id",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "All",
+        "multi": false,
+        "name": "tag_id",
+        "options": [],
+        "query": "SELECT DISTINCT tag_id FROM (SELECT tag_id FROM industrial_apm.dim_apm_signal_tags_mapping WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}' UNION DISTINCT SELECT tag_id FROM industrial_apm.ads_apm_tag_signal_timeseries_1m WHERE tenant_id = '${tenant_id}' AND asset_id = '${asset_id}') ORDER BY tag_id",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query",
+        "editorMode": "sql",
+        "queryType": "sql"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "APM Asset Drilldown",
+  "uid": "apm-asset-drilldown",
+  "version": 2,
+  "weekStart": ""
+}

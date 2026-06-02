@@ -1,0 +1,128 @@
+schema_version: measurement_points.v1
+asset_types: [pump, motor, compressor, conveyor, reactor]
+measurement_points:
+  pump:
+    - component_type: bearing_de
+      measurement_point: drive_end_bearing_vertical
+      metric_name: vibration_rms
+      tag_suffix: vibration_rms_mm_s
+      unit: mm_s
+      sampling_rate_hz: 1.0
+      normal_range_min: 0.3
+      normal_range_max: 4.5
+      engineering_limit_min: 0.0
+      engineering_limit_max: 18.0
+    - component_type: bearing_de
+      measurement_point: drive_end_bearing_temperature
+      metric_name: temperature
+      tag_suffix: temperature_c
+      unit: celsius
+      sampling_rate_hz: 1.0
+      normal_range_min: 35.0
+      normal_range_max: 82.0
+      engineering_limit_min: -20.0
+      engineering_limit_max: 140.0
+    - component_type: seal
+      measurement_point: seal_chamber_pressure
+      metric_name: pressure
+      tag_suffix: pressure_bar
+      unit: bar
+      sampling_rate_hz: 1.0
+      normal_range_min: 2.0
+      normal_range_max: 9.5
+      engineering_limit_min: 0.0
+      engineering_limit_max: 20.0
+    - component_type: impeller
+      measurement_point: discharge_flow
+      metric_name: flow_rate
+      tag_suffix: flow_rate_m3_h
+      unit: m3_h
+      sampling_rate_hz: 1.0
+      normal_range_min: 80.0
+      normal_range_max: 180.0
+      engineering_limit_min: 0.0
+      engineering_limit_max: 260.0
+  motor:
+    - component_type: stator
+      measurement_point: winding_temperature
+      metric_name: temperature
+      tag_suffix: temperature_c
+      unit: celsius
+      sampling_rate_hz: 1.0
+      normal_range_min: 45.0
+      normal_range_max: 95.0
+      engineering_limit_min: -20.0
+      engineering_limit_max: 155.0
+    - component_type: terminal_box
+      measurement_point: phase_current
+      metric_name: motor_current
+      tag_suffix: motor_current_a
+      unit: ampere
+      sampling_rate_hz: 1.0
+      normal_range_min: 35.0
+      normal_range_max: 180.0
+      engineering_limit_min: 0.0
+      engineering_limit_max: 280.0
+  compressor:
+    - component_type: compressor_stage
+      measurement_point: stage_vibration
+      metric_name: vibration_rms
+      tag_suffix: vibration_rms_mm_s
+      unit: mm_s
+      sampling_rate_hz: 1.0
+      normal_range_min: 0.5
+      normal_range_max: 5.0
+      engineering_limit_min: 0.0
+      engineering_limit_max: 22.0
+    - component_type: compressor_stage
+      measurement_point: discharge_pressure
+      metric_name: pressure
+      tag_suffix: pressure_bar
+      unit: bar
+      sampling_rate_hz: 1.0
+      normal_range_min: 5.0
+      normal_range_max: 16.0
+      engineering_limit_min: 0.0
+      engineering_limit_max: 35.0
+  conveyor:
+    - component_type: drive_motor
+      measurement_point: motor_power
+      metric_name: power
+      tag_suffix: power_kw
+      unit: kw
+      sampling_rate_hz: 1.0
+      normal_range_min: 8.0
+      normal_range_max: 40.0
+      engineering_limit_min: 0.0
+      engineering_limit_max: 80.0
+    - component_type: gearbox
+      measurement_point: gearbox_vibration
+      metric_name: vibration_rms
+      tag_suffix: vibration_rms_mm_s
+      unit: mm_s
+      sampling_rate_hz: 1.0
+      normal_range_min: 0.3
+      normal_range_max: 4.0
+      engineering_limit_min: 0.0
+      engineering_limit_max: 18.0
+  reactor:
+    - component_type: jacket
+      measurement_point: jacket_temperature
+      metric_name: temperature
+      tag_suffix: temperature_c
+      unit: celsius
+      sampling_rate_hz: 1.0
+      normal_range_min: 65.0
+      normal_range_max: 115.0
+      engineering_limit_min: -20.0
+      engineering_limit_max: 220.0
+    - component_type: vessel
+      measurement_point: vessel_pressure
+      metric_name: pressure
+      tag_suffix: pressure_bar
+      unit: bar
+      sampling_rate_hz: 1.0
+      normal_range_min: 1.5
+      normal_range_max: 8.0
+      engineering_limit_min: 0.0
+      engineering_limit_max: 18.0

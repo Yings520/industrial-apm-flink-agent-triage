@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/realtime_diagnosis_event.schema.json",
+  "title": "realtime_diagnosis_event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "diagnosis_id",
+    "tenant_id",
+    "asset_id",
+    "component_id",
+    "anomaly_event_id",
+    "diagnosis_summary",
+    "probable_causes",
+    "evidence",
+    "related_signals",
+    "related_failure_modes",
+    "recommended_checks",
+    "suggested_action",
+    "risk_level",
+    "confidence",
+    "escalation_required",
+    "quality_caveats",
+    "generated_at",
+    "agent_version",
+    "prompt_version",
+    "model_version"
+  ],
+  "properties": {
+    "diagnosis_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "asset_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "component_id": {
+      "type": "string"
+    },
+    "anomaly_event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "diagnosis_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "probable_causes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "evidence": {
+      "type": "object"
+    },
+    "related_signals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "related_failure_modes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "recommended_checks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "suggested_action": {
+      "type": "string"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "escalation_required": {
+      "type": "boolean"
+    },
+    "quality_caveats": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "agent_version": {
+      "type": "string"
+    },
+    "prompt_version": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    }
+  }
+}

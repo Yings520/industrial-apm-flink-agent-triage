@@ -41,7 +41,7 @@ profiles:
   demo:
     tenants: 3
     plants_per_tenant: 3
-    assets_per_plant: 20
+    assets_per_plant: 10
     metric_types: [temperature, vibration, pressure, flow_rate, power_draw]
     anomaly_scenarios: [late, missing_heartbeat, flatline, spike, drift]
     scenarios: [normal, late, missing_heartbeat, flatline, spike, drift, invalid_event]

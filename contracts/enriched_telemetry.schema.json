@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/enriched_telemetry.schema.json",
+  "title": "enriched_telemetry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "schema_version",
+    "tenant_id",
+    "plant_id",
+    "asset_id",
+    "asset_name",
+    "tag_id",
+    "tag_name",
+    "metric_name",
+    "threshold_profile_id",
+    "event_time",
+    "ingest_time",
+    "value",
+    "unit",
+    "source_system",
+    "quality_flags",
+    "scenario"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "enriched_telemetry.v1"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "plant_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "asset_name": {
+      "type": "string"
+    },
+    "tag_id": {
+      "type": "string"
+    },
+    "tag_name": {
+      "type": "string"
+    },
+    "metric_name": {
+      "type": "string"
+    },
+    "threshold_profile_id": {
+      "type": "string"
+    },
+    "event_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "ingest_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "value": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "source_system": {
+      "type": "string"
+    },
+    "quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "scenario": {
+      "type": "string"
+    }
+  }
+}

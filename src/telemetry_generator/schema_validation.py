@@ -14,7 +14,10 @@ from jsonschema.exceptions import ValidationError
 
 from src.telemetry_generator.config import REPO_ROOT
 
-SCHEMA_PATH = REPO_ROOT / "contracts" / "sensor_event.schema.json"
+SCHEMA_PATHS = {
+    "raw_sensor_event": REPO_ROOT / "contracts" / "raw_sensor_event.schema.json",
+    "sensor_event": REPO_ROOT / "contracts" / "sensor_event.schema.json",
+}
 
 
 @dataclass(frozen=True)
@@ -32,16 +35,19 @@ class ValidationCliNamespace(argparse.Namespace):
     input: Path = Path()
     output_dir: Path = Path()
     profile: str | None = None
+    schema: str = "raw_sensor_event"
 
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
-def _load_schema() -> dict[str, object]:
-    payload = cast(object, json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
+def _load_schema(schema_name: str) -> dict[str, object]:
+    if schema_name not in SCHEMA_PATHS:
+        raise ValueError(f"Unknown schema: {schema_name}")
+    payload = cast(object, json.loads(SCHEMA_PATHS[schema_name].read_text(encoding="utf-8")))
     if not isinstance(payload, dict):
-        raise ValueError("sensor_event schema must be a JSON object")
+        raise ValueError(f"{schema_name} schema must be a JSON object")
     return cast(dict[str, object], payload)
 
 
@@ -56,16 +62,25 @@ def _schema_version(schema: dict[str, object]) -> str:
     schema_version = cast(dict[str, object], schema_version_value)
     version = schema_version.get("const")
     if not isinstance(version, str):
-        raise ValueError("schema_version const is required in sensor_event schema")
+        raise ValueError("schema_version const is required")
     return version
 
 
-def _jsonl_files(input_dir: Path, profile_name: str | None = None) -> list[Path]:
-    if profile_name is not None:
-        expected = [
-            input_dir / f"sensor_events_{profile_name}.jsonl",
-            input_dir / f"invalid_events_{profile_name}.jsonl",
+def _profile_files(input_dir: Path, profile_name: str, schema_name: str) -> list[Path]:
+    if schema_name == "raw_sensor_event":
+        return [
+            input_dir / f"raw_sensor_events_{profile_name}.jsonl",
+            input_dir / f"raw_sensor_events_invalid_{profile_name}.jsonl",
         ]
+    return [
+        input_dir / f"sensor_events_{profile_name}.jsonl",
+        input_dir / f"invalid_events_{profile_name}.jsonl",
+    ]
+
+
+def _jsonl_files(input_dir: Path, profile_name: str | None = None, schema_name: str = "raw_sensor_event") -> list[Path]:
+    if profile_name is not None:
+        expected = _profile_files(input_dir, profile_name, schema_name)
         missing = [path for path in expected if not path.is_file()]
         if missing:
             missing_paths = ", ".join(str(path) for path in missing)
@@ -79,9 +94,10 @@ def _jsonl_files(input_dir: Path, profile_name: str | None = None) -> list[Path]
 def _iter_records(
     input_dir: Path,
     profile_name: str | None = None,
+    schema_name: str = "raw_sensor_event",
 ) -> list[tuple[dict[str, object] | None, str | None]]:
     records: list[tuple[dict[str, object] | None, str | None]] = []
-    for path in _jsonl_files(input_dir, profile_name):
+    for path in _jsonl_files(input_dir, profile_name, schema_name):
         for line in path.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
@@ -100,11 +116,7 @@ def _iter_records(
 def _missing_required_fields(error: ValidationError) -> list[str]:
     validator_value = error.validator_value
     instance = cast(object, error.instance)
-    if (
-        error.validator != "required"
-        or not isinstance(instance, dict)
-        or not isinstance(validator_value, list)
-    ):
+    if error.validator != "required" or not isinstance(instance, dict) or not isinstance(validator_value, list):
         return []
     instance_mapping = cast(dict[str, object], instance)
     required_fields = cast(list[object], validator_value)
@@ -138,12 +150,13 @@ def _sort_errors(errors: list[ValidationError]) -> list[ValidationError]:
     return sorted(errors, key=lambda error: (_field_path(error), _error_code(error), error.message))
 
 
-def _reject_entry(
+def reject_entry(
     original_record: dict[str, object] | None,
     error_code: str,
     field_path: str,
     message: str,
     schema_version: str,
+    schema_name: str,
     all_errors: list[dict[str, str]] | None = None,
 ) -> dict[str, object]:
     entry: dict[str, object] = {
@@ -151,7 +164,7 @@ def _reject_entry(
         "error_code": error_code,
         "field_path": field_path,
         "message": message,
-        "schema_name": "sensor_event",
+        "schema_name": schema_name,
         "schema_version": schema_version,
         "validation_time": _utc_now(),
     }
@@ -174,6 +187,7 @@ def _write_summary(
     accepted_records: int,
     rejected_records: int,
     errors_by_code: Counter[str],
+    schema_name: str,
 ) -> None:
     _ = path.write_text(
         json.dumps(
@@ -182,7 +196,7 @@ def _write_summary(
                 "accepted_records": accepted_records,
                 "rejected_records": rejected_records,
                 "errors_by_code": dict(sorted(errors_by_code.items())),
-                "schemas_checked": ["sensor_event.schema.json"],
+                "schemas_checked": [f"{schema_name}.schema.json"],
             },
             indent=2,
             sort_keys=True,
@@ -192,8 +206,25 @@ def _write_summary(
     )
 
 
-def validate_input_dir(input_dir: Path, output_dir: Path, profile_name: str | None = None) -> ValidationResult:
-    schema = _load_schema()
+def _accepted_filename(schema_name: str) -> str:
+    if schema_name == "raw_sensor_event":
+        return "validated_raw_sensor_events.jsonl"
+    return "validated_sensor_events.jsonl"
+
+
+def _rejected_filename(schema_name: str) -> str:
+    if schema_name == "raw_sensor_event":
+        return "rejected_raw_sensor_records.jsonl"
+    return "rejected_records.jsonl"
+
+
+def validate_input_dir(
+    input_dir: Path,
+    output_dir: Path,
+    profile_name: str | None = None,
+    schema_name: str = "raw_sensor_event",
+) -> ValidationResult:
+    schema = _load_schema(schema_name)
     schema_version = _schema_version(schema)
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     iter_errors = cast(Callable[[dict[str, object]], Iterable[ValidationError]], validator.iter_errors)
@@ -201,7 +232,7 @@ def validate_input_dir(input_dir: Path, output_dir: Path, profile_name: str | No
     rejected_records: list[dict[str, object]] = []
     errors_by_code: Counter[str] = Counter()
 
-    records = _iter_records(input_dir, profile_name)
+    records = _iter_records(input_dir, profile_name, schema_name)
     no_input_records = len(records) == 0
     if no_input_records:
         errors_by_code["no_input_records"] += 1
@@ -209,12 +240,13 @@ def validate_input_dir(input_dir: Path, output_dir: Path, profile_name: str | No
         if parse_error is not None:
             errors_by_code["invalid_json"] += 1
             rejected_records.append(
-                _reject_entry(
+                reject_entry(
                     original_record=record,
                     error_code="invalid_json",
                     field_path="/",
                     message=parse_error,
                     schema_version=schema_version,
+                    schema_name=schema_name,
                 )
             )
             continue
@@ -237,18 +269,19 @@ def validate_input_dir(input_dir: Path, output_dir: Path, profile_name: str | No
             errors_by_code[error["error_code"]] += 1
         first_error = all_errors[0]
         rejected_records.append(
-            _reject_entry(
+            reject_entry(
                 original_record=record,
                 error_code=first_error["error_code"],
                 field_path=first_error["field_path"],
                 message=first_error["message"],
                 schema_version=schema_version,
+                schema_name=schema_name,
                 all_errors=all_errors,
             )
         )
 
-    accepted_path = output_dir / "generated" / "validated_sensor_events.jsonl"
-    rejected_path = output_dir / "rejected" / "rejected_records.jsonl"
+    accepted_path = output_dir / "generated" / _accepted_filename(schema_name)
+    rejected_path = output_dir / "rejected" / _rejected_filename(schema_name)
     summary_path = output_dir / "validation-summary.json"
     _write_jsonl(accepted_path, accepted_records)
     _write_jsonl(rejected_path, rejected_records)
@@ -258,6 +291,7 @@ def validate_input_dir(input_dir: Path, output_dir: Path, profile_name: str | No
         accepted_records=len(accepted_records),
         rejected_records=len(rejected_records),
         errors_by_code=errors_by_code,
+        schema_name=schema_name,
     )
 
     return ValidationResult(
@@ -276,6 +310,7 @@ def build_parser() -> argparse.ArgumentParser:
     _ = parser.add_argument("--input", type=Path, required=True)
     _ = parser.add_argument("--output-dir", type=Path, required=True)
     _ = parser.add_argument("--profile", choices=["smoke", "demo"])
+    _ = parser.add_argument("--schema", choices=sorted(SCHEMA_PATHS), default="raw_sensor_event")
     return parser
 
 
@@ -287,7 +322,7 @@ def _parse_args(argv: list[str] | None) -> ValidationCliNamespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
-    result = validate_input_dir(args.input, args.output_dir, profile_name=args.profile)
+    result = validate_input_dir(args.input, args.output_dir, profile_name=args.profile, schema_name=args.schema)
     message = (
         f"validated {result.total_records} records: "
         + f"{result.accepted_records} accepted, "

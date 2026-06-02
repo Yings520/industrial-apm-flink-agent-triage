@@ -1,0 +1,62 @@
+schema_version: synthetic_scenarios.v1
+default_start_time: "2026-01-01T00:00:00Z"
+default_days: 30
+operating_states:
+  - startup
+  - normal
+  - steady_load
+  - high_load
+  - idle
+  - warning
+  - critical
+  - degradation
+  - failure
+  - maintenance
+  - shutdown
+failure_timelines:
+  pump_cavitation_30d:
+    asset_type: pump
+    failure_mode_id: fm_pump_cavitation
+    component_type: impeller
+    phases:
+      - state: normal
+        start_day: 0
+        end_day: 10
+      - state: degradation
+        start_day: 10
+        end_day: 22
+      - state: warning
+        start_day: 22
+        end_day: 26
+      - state: critical
+        start_day: 26
+        end_day: 28
+      - state: maintenance
+        start_day: 28
+        end_day: 29
+      - state: normal
+        start_day: 29
+        end_day: 30
+  motor_overheating_30d:
+    asset_type: motor
+    failure_mode_id: fm_motor_winding_overheat
+    component_type: stator
+    phases:
+      - state: normal
+        start_day: 0
+        end_day: 14
+      - state: high_load
+        start_day: 14
+        end_day: 18
+      - state: degradation
+        start_day: 18
+        end_day: 25
+      - state: critical
+        start_day: 25
+        end_day: 28
+      - state: maintenance
+        start_day: 28
+        end_day: 29
+      - state: normal
+        start_day: 29
+        end_day: 30

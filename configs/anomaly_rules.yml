@@ -1,40 +1,138 @@
-schema_version: anomaly_rules.v1
+schema_version: anomaly_rules.v2
+description: Anomaly detection rules with governance metadata. Each rule has tenant, asset_type, metric, unit scope with version control.
 rules:
-  - rule_id: missing_heartbeat
-    name: Missing heartbeat
-    scenario: missing_heartbeat
-    method: heartbeat_gap
-    severity: critical
-    parameters:
-      max_gap_minutes: 10
-  - rule_id: flatline
-    name: Flatline sensor value
-    scenario: flatline
-    method: repeated_value_window
-    severity: warning
-    parameters:
-      min_repeated_points: 6
-  - rule_id: threshold_spike
-    name: Threshold spike
-    scenario: spike
+  - profile_id: thr_manufacturing_rotating_temp
+    tenant_id: "*"
+    asset_type: cnc_machine
+    component_type: motor
+    metric_name: temperature
+    unit: celsius
+    rule_id: threshold_spike
+    rule_name: "CNC Motor Temperature Spike"
     method: static_threshold
     severity: critical
     parameters:
       multiplier: 2.5
-  - rule_id: rolling_zscore
-    name: Rolling baseline z-score
-    scenario: late
+      baseline_window_points: 24
+    description: "Temperature exceeding 2.5x baseline window average suggests impending motor winding failure"
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    effective_to: null
+    owner: reliability_engineering
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
+
+  - profile_id: thr_manufacturing_rotating_vib
+    tenant_id: "*"
+    asset_type: conveyor
+    component_type: bearing
+    metric_name: vibration
+    unit: mm_s
+    rule_id: rolling_zscore
+    rule_name: "Conveyor Bearing Vibration Z-Score"
     method: rolling_baseline_zscore
     severity: warning
     parameters:
       window_points: 24
       zscore_threshold: 3.0
-  - rule_id: drift_rate_of_change
-    name: Drift rate of change
-    scenario: drift
+    description: "Vibration exceeding 3 sigma from rolling baseline suggests bearing degradation"
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    effective_to: null
+    owner: reliability_engineering
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
+
+  - profile_id: thr_chemical_process_pressure
+    tenant_id: "*"
+    asset_type: reactor
+    component_type: seal
+    metric_name: pressure
+    unit: bar
+    rule_id: drift_rate_of_change
+    rule_name: "Reactor Pressure Drift Detection"
     method: slope_over_window
     severity: warning
     parameters:
       window_points: 36
       max_slope_per_hour: 0.8
+    description: "Gradual pressure drift may indicate seal degradation or process upset"
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    effective_to: null
+    owner: process_safety
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
 
+  - profile_id: thr_power_critical_vib
+    tenant_id: "*"
+    asset_type: turbine
+    component_type: turbine_blade
+    metric_name: vibration
+    unit: mm_s
+    rule_id: threshold_spike
+    rule_name: "Turbine Vibration Spike"
+    method: static_threshold
+    severity: critical
+    parameters:
+      multiplier: 2.0
+      baseline_window_points: 48
+    description: "Sudden vibration increase may indicate blade damage or foreign object impact"
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    effective_to: null
+    owner: reliability_engineering
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
+
+  - profile_id: thr_water_treatment_flow
+    tenant_id: "*"
+    asset_type: lift_pump
+    component_type: pump_impeller
+    metric_name: flow_rate
+    unit: m3_h
+    rule_id: missing_heartbeat
+    rule_name: "Pump Missing Heartbeat Detection"
+    method: heartbeat_gap
+    severity: critical
+    parameters:
+      max_gap_minutes: 10
+    description: "No flow reading for 10+ minutes may indicate pump stoppage or sensor failure"
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    effective_to: null
+    owner: water_ops
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system
+
+  - profile_id: thr_generic_balanced_flatline
+    tenant_id: "*"
+    asset_type: motor
+    component_type: motor
+    metric_name: temperature
+    unit: celsius
+    rule_id: flatline
+    rule_name: "Motor Temperature Flatline"
+    method: repeated_value_window
+    severity: warning
+    parameters:
+      min_repeated_points: 6
+    description: "Unchanging temperature for 6+ consecutive readings suggests sensor stuck or dead"
+    version: "1.0.0"
+    effective_from: "2025-06-01T00:00:00Z"
+    effective_to: null
+    owner: reliability_engineering
+    approval_status: approved
+    status: active
+    created_at: "2025-06-01T00:00:00Z"
+    created_by: system

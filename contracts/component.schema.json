@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://industrial-apm.local/contracts/component.schema.json",
+  "title": "component",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tenant_id",
+    "asset_id",
+    "component_id",
+    "component_type",
+    "component_name"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "component.v1"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string",
+      "description": "Parent asset this component belongs to"
+    },
+    "component_id": {
+      "type": "string"
+    },
+    "component_type": {
+      "type": "string",
+      "enum": [
+        "motor", "bearing", "gearbox", "pump_impeller", "compressor_stage",
+        "heat_exchanger_bundle", "turbine_blade", "conveyor_belt", "robot_joint",
+        "chiller_compressor", "boiler_tube", "valve_actuator", "seal", "filter_element",
+        "cooling_tower_fan", "furnace_burner", "rolling_mill_roll", "caster_mold",
+        "hydraulic_cylinder", "membrane_module", "aerator_diffuser", "elevator_motor",
+        "air_handler_fan", "packaging_sealer", "fan_impeller", "generic_component"
+      ]
+    },
+    "component_name": {
+      "type": "string"
+    },
+    "functional_location": {
+      "type": "string",
+      "description": "Functional location code (e.g. IEC 81346-style)"
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "serial_number": {
+      "type": "string"
+    },
+    "commissioned_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lifecycle_state": {
+      "type": "string",
+      "enum": ["active", "standby", "degraded", "maintenance", "decommissioned"]
+    },
+    "criticality": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "expected_metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time",
+      "description": "SCD effective start"
+    },
+    "valid_to": {
+      "type": "string",
+      "format": "date-time",
+      "description": "SCD effective end. Null = current"
+    },
+    "is_current": {
+      "type": "boolean",
+      "description": "Current record indicator for SCD Type 2"
+    }
+  }
+}
